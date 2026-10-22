@@ -2,18 +2,17 @@
 
 ## Estado de acceso inicial
 
-Durante la implementación, `gh auth status` indicó token local inválido y `wrangler whoami` indicó que no había sesión autenticada. No se leyó ni se reutilizó ningún secreto del fuzzer existente. Publicar requiere autenticar estas herramientas o proporcionar otro acceso autorizado mediante el producto, sin pegar secretos en el chat.
+La primera comprobación de GitHub falló por la restricción de red del entorno; al comprobarlo con red autorizada, la sesión de Shisetsu-Code resultó válida. El repositorio privado ya fue creado y publicado, y su CI pasó. `wrangler whoami` sí confirmó que falta autenticación de Cloudflare. No se leyó ni se reutilizó ningún secreto del fuzzer existente; completar ese acceso no requiere pegar secretos en el chat.
 
 ## GitHub
 
-Desde esta carpeta, después de autenticar GitHub:
+El repositorio ya existe y tiene `main` como rama principal. Para obtenerlo en otra carpeta o equipo:
 
 ```powershell
-gh auth login
-gh repo create Shisetsu-Code/game-pilot-mcp --private --source . --remote origin --push
+gh repo clone Shisetsu-Code/game-pilot-mcp
 ```
 
-Si el nombre ya existe, comprobar que sea el repositorio correcto antes de asociarlo; no sobrescribir un proyecto ajeno. La rama local de implementación contiene la fuente completa y CI. No incluir `.env`, `data`, `artifacts` ni `node_modules`.
+La copia local actual ya tiene `origin` configurado. No crear otro repositorio del mismo nombre. No incluir `.env`, `data`, `artifacts` ni `node_modules`.
 
 ## Cloudflare
 

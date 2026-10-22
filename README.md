@@ -2,6 +2,8 @@
 
 MCP para explorar demos con saldo ficticio: **4 procesos Chromium × 2 juegos**, imágenes JPEG comprimidas por lotes, decisiones independientes, BFS persistente y exportación de recorridos.
 
+Fuente publicada en el repositorio privado [Shisetsu-Code/game-pilot-mcp](https://github.com/Shisetsu-Code/game-pilot-mcp). [Verificación de GitHub aprobada](https://github.com/Shisetsu-Code/game-pilot-mcp/actions/runs/39836492865): 24 pruebas de núcleo/OAuth y nueve de navegador. El despliegue de Cloudflare sigue pendiente de autenticación; aún no hay un endpoint de producción verificado.
+
 ## Qué está implementado
 
 - MCP oficial con Streamable HTTP, puente stdio y OAuth 2.1 mediante la biblioteca de Cloudflare.

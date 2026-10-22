@@ -10,7 +10,7 @@ Access preflight: first sandboxed gh check reported invalid authentication. Netw
 
 Tasks 1–8 and 4B: implemented with tests observed failing before implementation. Before final review, 19 unit/runtime tests and 7 browser tests passed, including four Chromium processes/eight contexts, 56 actions and private exports. Cloudflare deployment dry-run passed. One official CandyRush DEMO frame was opened/captured successfully with no purchases/spins.
 
-Task 9: GitHub publication in progress; Cloudflare production deployment and real ChatGPT connection require authentication. No production endpoint is claimed.
+Task 9: source published privately at https://github.com/Shisetsu-Code/game-pilot-mcp, main commit 556a9e753402cbd074f7572d0797d37b673464cc. GitHub verification https://github.com/Shisetsu-Code/game-pilot-mcp/actions/runs/39836492865 completed successfully. Cloudflare production deployment and real ChatGPT connection require authentication. No production endpoint is claimed.
 
 Ruling: form batches immediately from ready observations instead of adding the optional 300 ms window — avoids an artificial wait — individual small batches may carry fewer than eight games.
 
@@ -25,6 +25,8 @@ Final independent review: seven Important findings reproduced. Regression tests 
 - Final: fixed visual BFS destinations — unclassified observations do not create semantic nodes; edges resolve on annotation RED→GREEN.
 - Final: fixed replay source provenance — immutable pre-input observation/image/geometry/state snapshot in each command RED→GREEN.
 - Final: fixed menu-page option loss — merge by stable option/configuration ID with page provenance, preserving earlier unpurchased options RED→GREEN.
+
+Final verification after the fix pass: syntax checks pass; 24/24 unit/runtime tests pass; 9/9 browser tests pass (including full 4×2 processes); deployment dry-run passes. The same checks passed in GitHub CI on Ubuntu/Node24. The reviewer was not re-dispatched; each Important finding was covered by its red-to-green regression test and the full green suite.
 
 Final: minor (deferred): historical design/plan documents preserve earlier proposal status and unchecked execution steps; current implementation and acceptance status are in README and this ledger.
 
