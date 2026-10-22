@@ -1,0 +1,388 @@
+{
+  "checkedAt": "2026-10-22T22:54:19.484Z",
+  "source": {
+    "repository": "Shisetsu-Code/Hybrid-actions",
+    "commit": "1014816f2952a9019369ddde5c0ad55c40e33d78",
+    "path": "config/providers.json",
+    "linkedFrom": "Shisetsu-Code/hybrid-cloud-fuzzer",
+    "selected": [
+      {
+        "id": "pragmatic:3-buzzing-wilds",
+        "provider": "pragmatic",
+        "name": "3-buzzing-wilds",
+        "url": "https://www.pragmaticplay.com/en/games/3-buzzing-wilds/"
+      },
+      {
+        "id": "1spin4win:10-lucky-spins",
+        "provider": "1spin4win",
+        "name": "10-lucky-spins",
+        "url": "https://gs.1spin4win.com:10443/gmh5/games.html?game=TenLuckySpins&currency=EUR&config=1&freeplay=true&language=en&exit=none"
+      },
+      {
+        "id": "belatra:20-icy-fruits",
+        "provider": "belatra",
+        "name": "20-icy-fruits",
+        "url": "https://belatragames.com/es/games/game/20-icy-fruits"
+      },
+      {
+        "id": "bgaming:3-lucky-monkeys-hold-win",
+        "provider": "bgaming",
+        "name": "3-lucky-monkeys-hold-win",
+        "url": "https://demo.bgaming-network.com/play/ThreeLuckyMonkeysHoldAndWin/FUN?server=demo"
+      },
+      {
+        "id": "ka_gaming:capygo123",
+        "provider": "ka_gaming",
+        "name": "capygo123",
+        "url": "https://gamesdemo.kaga88.com/?g=CapyGo123&p=demo&u=596500136&t=123&ak=accessKey&cr=USD&loc=es&l=https%3A%2F%2Fwww.kaga88.com%2F"
+      },
+      {
+        "id": "rubyplay:diamond-explosion-7s",
+        "provider": "rubyplay",
+        "name": "diamond-explosion-7s",
+        "url": "https://rubyplay.com/games/diamond-explosion-7s/"
+      },
+      {
+        "id": "redtiger:10001-nights",
+        "provider": "redtiger",
+        "name": "10001-nights",
+        "url": "https://games.evolution.com/slots/10001-nights/"
+      },
+      {
+        "id": "3oaks:15_dragon_pearls",
+        "provider": "3oaks",
+        "name": "15_dragon_pearls",
+        "url": "https://3oaks.com/game/15_dragon_pearls"
+      },
+      {
+        "id": "yggdrasil:3-gladiators-vs-caesar",
+        "provider": "yggdrasil",
+        "name": "3-gladiators-vs-caesar",
+        "url": "https://yggdrasilgaming.com/games/3-gladiators-vs-caesar/"
+      },
+      {
+        "id": "nolimit_city:airportsecurity",
+        "provider": "nolimit_city",
+        "name": "airportsecurity",
+        "url": "https://playin.com/embed/v1/demo/AirportSecurity"
+      },
+      {
+        "id": "playtech:game-gpas_1reeler_pop",
+        "provider": "playtech",
+        "name": "game-gpas_1reeler_pop",
+        "url": "https://cachedownload.playtechone.com/ngmdesktop/casinoclient.html?game=gpas_1reeler_pop&preferedmode=offline&real=0"
+      },
+      {
+        "id": "amusnet:806",
+        "provider": "amusnet",
+        "name": "806",
+        "url": "https://amusnet.com/games/online-casino/rise-of-ra"
+      },
+      {
+        "id": "playngo:1098",
+        "provider": "playngo",
+        "name": "1098",
+        "url": "https://www.playngo.com/games/tower-run-treasure-steps"
+      },
+      {
+        "id": "pragmatic:3-dancing-monkeys",
+        "provider": "pragmatic",
+        "name": "3-dancing-monkeys",
+        "url": "https://www.pragmaticplay.com/en/games/3-dancing-monkeys/"
+      },
+      {
+        "id": "1spin4win:all-ways-egypt",
+        "provider": "1spin4win",
+        "name": "all-ways-egypt",
+        "url": "https://gs.1spin4win.com:10443/gmh5/games.html?game=AllwaysEgypt&currency=EUR&config=1&freeplay=true&language=en&exit=none"
+      },
+      {
+        "id": "belatra:20-super-stars",
+        "provider": "belatra",
+        "name": "20-super-stars",
+        "url": "https://belatragames.com/es/games/game/20-super-stars"
+      },
+      {
+        "id": "bgaming:adventures",
+        "provider": "bgaming",
+        "name": "adventures",
+        "url": "https://bgaming-network.com/play/Adventures/FUN?server=demo"
+      },
+      {
+        "id": "ka_gaming:elvisguava1960",
+        "provider": "ka_gaming",
+        "name": "elvisguava1960",
+        "url": "https://gamesdemo.kaga88.com/?g=ElvisGuava1960&p=demo&u=141261189&t=123&ak=accessKey&cr=USD&loc=es&l=https%3A%2F%2Fwww.kaga88.com%2F"
+      },
+      {
+        "id": "rubyplay:frankenstein-triple-volt",
+        "provider": "rubyplay",
+        "name": "frankenstein-triple-volt",
+        "url": "https://rubyplay.com/games/frankenstein-triple-volt/"
+      },
+      {
+        "id": "redtiger:10001-nights-megaways",
+        "provider": "redtiger",
+        "name": "10001-nights-megaways",
+        "url": "https://games.evolution.com/slots/10001-nights-megaways/"
+      }
+    ]
+  },
+  "network": "GitHub directo, sin VPN",
+  "workers": 4,
+  "gamesPerWorker": 2,
+  "uniqueGames": 20,
+  "providers": 13,
+  "captured": 20,
+  "baseGameVisible": 2,
+  "purchases": 0,
+  "spins": 0,
+  "scope": "Prueba de apertura y captura. No certifica compras, tiradas ni cobertura de menús.",
+  "githubRuns": [
+    "39866931156",
+    "39867517861",
+    "39867922288"
+  ],
+  "rows": [
+    {
+      "number": 1,
+      "id": "pragmatic:3-buzzing-wilds",
+      "provider": "pragmatic",
+      "name": "3-buzzing-wilds",
+      "url": "https://www.pragmaticplay.com/en/games/3-buzzing-wilds/",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/01-pragmatic.jpg",
+      "status": "Juego base visible",
+      "detail": "3 Buzzing Wilds muestra rodillos y crédito ficticio; un aviso de cookies cubre parte de los controles. No se hicieron tiradas ni compras.",
+      "runId": "85a9a9e4-d3d2-45eb-bc19-9f0c4a51e7bf"
+    },
+    {
+      "number": 2,
+      "id": "1spin4win:10-lucky-spins",
+      "provider": "1spin4win",
+      "name": "10-lucky-spins",
+      "url": "https://gs.1spin4win.com:10443/gmh5/games.html?game=TenLuckySpins&currency=EUR&config=1&freeplay=true&language=en&exit=none",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/02-1spin4win.jpg",
+      "status": "Cargando",
+      "detail": "Pantalla 10 Lucky Spins con Loading; no se observaron rodillos listos.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 3,
+      "id": "belatra:20-icy-fruits",
+      "provider": "belatra",
+      "name": "20-icy-fruits",
+      "url": "https://belatragames.com/es/games/game/20-icy-fruits",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/03-belatra.jpg",
+      "status": "Catálogo / cookies",
+      "detail": "Ficha de 20 Icy Fruits; la barra de cookies cubre la demo parcialmente visible.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 4,
+      "id": "bgaming:3-lucky-monkeys-hold-win",
+      "provider": "bgaming",
+      "name": "3-lucky-monkeys-hold-win",
+      "url": "https://demo.bgaming-network.com/play/ThreeLuckyMonkeysHoldAndWin/FUN?server=demo",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/04-bgaming.jpg",
+      "status": "Pantalla negra",
+      "detail": "Título correcto, pero la captura del juego es negra.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 5,
+      "id": "ka_gaming:capygo123",
+      "provider": "ka_gaming",
+      "name": "capygo123",
+      "url": "https://gamesdemo.kaga88.com/?g=CapyGo123&p=demo&u=596500136&t=123&ak=accessKey&cr=USD&loc=es&l=https%3A%2F%2Fwww.kaga88.com%2F",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/05-ka_gaming.jpg",
+      "status": "Bloqueo Cloudflare",
+      "detail": "Verificación de seguridad del proveedor; no se intentó resolverla.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 6,
+      "id": "rubyplay:diamond-explosion-7s",
+      "provider": "rubyplay",
+      "name": "diamond-explosion-7s",
+      "url": "https://rubyplay.com/games/diamond-explosion-7s/",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/06-rubyplay.jpg",
+      "status": "Confirmación de edad",
+      "detail": "Aviso RubyPlay; el juego no quedó visible.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 7,
+      "id": "redtiger:10001-nights",
+      "provider": "redtiger",
+      "name": "10001-nights",
+      "url": "https://games.evolution.com/slots/10001-nights/",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/07-redtiger.jpg",
+      "status": "Falta iniciar demo",
+      "detail": "Página de Evolution con LAUNCH GAME y aviso de cookies.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 8,
+      "id": "3oaks:15_dragon_pearls",
+      "provider": "3oaks",
+      "name": "15_dragon_pearls",
+      "url": "https://3oaks.com/game/15_dragon_pearls",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/08-3oaks.jpg",
+      "status": "Cargando",
+      "detail": "Motor de 3 Oaks visible con barra de carga, sin juego base listo.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 9,
+      "id": "yggdrasil:3-gladiators-vs-caesar",
+      "provider": "yggdrasil",
+      "name": "3-gladiators-vs-caesar",
+      "url": "https://yggdrasilgaming.com/games/3-gladiators-vs-caesar/",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/09-yggdrasil.jpg",
+      "status": "Cargando",
+      "detail": "Página en blanco con indicador de carga.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 10,
+      "id": "nolimit_city:airportsecurity",
+      "provider": "nolimit_city",
+      "name": "airportsecurity",
+      "url": "https://playin.com/embed/v1/demo/AirportSecurity",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/10-nolimit_city.jpg",
+      "status": "Confirmación de edad",
+      "detail": "El visor de Nolimit City exige confirmar edad.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 11,
+      "id": "playtech:game-gpas_1reeler_pop",
+      "provider": "playtech",
+      "name": "game-gpas_1reeler_pop",
+      "url": "https://cachedownload.playtechone.com/ngmdesktop/casinoclient.html?game=gpas_1reeler_pop&preferedmode=offline&real=0",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/11-playtech.jpg",
+      "status": "Cargando",
+      "detail": "Logo Playtech y animación de carga; sin rodillos listos.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 12,
+      "id": "amusnet:806",
+      "provider": "amusnet",
+      "name": "806",
+      "url": "https://amusnet.com/games/online-casino/rise-of-ra",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/12-amusnet.jpg",
+      "status": "Confirmación de edad",
+      "detail": "Amusnet pide confirmar ser mayor de 18.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 13,
+      "id": "playngo:1098",
+      "provider": "playngo",
+      "name": "1098",
+      "url": "https://www.playngo.com/games/tower-run-treasure-steps",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/13-playngo.jpg",
+      "status": "Confirmación de edad",
+      "detail": "Aviso Play’n GO; no se verificó juego base.",
+      "runId": "85a9a9e4-d3d2-45eb-bc19-9f0c4a51e7bf"
+    },
+    {
+      "number": 14,
+      "id": "pragmatic:3-dancing-monkeys",
+      "provider": "pragmatic",
+      "name": "3-dancing-monkeys",
+      "url": "https://www.pragmaticplay.com/en/games/3-dancing-monkeys/",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/14-pragmatic.jpg",
+      "status": "Juego base visible",
+      "detail": "3 Dancing Monkeys muestra rodillos, saldo ficticio, giro y compra de free spins. No se hicieron tiradas ni compras.",
+      "runId": "85a9a9e4-d3d2-45eb-bc19-9f0c4a51e7bf"
+    },
+    {
+      "number": 15,
+      "id": "1spin4win:all-ways-egypt",
+      "provider": "1spin4win",
+      "name": "all-ways-egypt",
+      "url": "https://gs.1spin4win.com:10443/gmh5/games.html?game=AllwaysEgypt&currency=EUR&config=1&freeplay=true&language=en&exit=none",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/15-1spin4win.jpg",
+      "status": "Cargando",
+      "detail": "Pantalla All Ways Egypt con Loading; no se observaron rodillos listos.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 16,
+      "id": "belatra:20-super-stars",
+      "provider": "belatra",
+      "name": "20-super-stars",
+      "url": "https://belatragames.com/es/games/game/20-super-stars",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/16-belatra.jpg",
+      "status": "Catálogo / cookies",
+      "detail": "Ficha de 20 Super Stars con la demo parcialmente cubierta.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 17,
+      "id": "bgaming:adventures",
+      "provider": "bgaming",
+      "name": "adventures",
+      "url": "https://bgaming-network.com/play/Adventures/FUN?server=demo",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/17-bgaming.jpg",
+      "status": "Pantalla inicial",
+      "detail": "Logo Adventures / BGaming; no se observaron rodillos listos.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 18,
+      "id": "ka_gaming:elvisguava1960",
+      "provider": "ka_gaming",
+      "name": "elvisguava1960",
+      "url": "https://gamesdemo.kaga88.com/?g=ElvisGuava1960&p=demo&u=141261189&t=123&ak=accessKey&cr=USD&loc=es&l=https%3A%2F%2Fwww.kaga88.com%2F",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/18-ka_gaming.jpg",
+      "status": "Bloqueo Cloudflare",
+      "detail": "Verificación de seguridad del proveedor; no se intentó resolverla.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 19,
+      "id": "rubyplay:frankenstein-triple-volt",
+      "provider": "rubyplay",
+      "name": "frankenstein-triple-volt",
+      "url": "https://rubyplay.com/games/frankenstein-triple-volt/",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/19-rubyplay.jpg",
+      "status": "Confirmación de edad",
+      "detail": "Aviso RubyPlay; el juego no quedó visible.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    },
+    {
+      "number": 20,
+      "id": "redtiger:10001-nights-megaways",
+      "provider": "redtiger",
+      "name": "10001-nights-megaways",
+      "url": "https://games.evolution.com/slots/10001-nights-megaways/",
+      "captured": true,
+      "screenshot": "prueba-20-capturas-final/20-redtiger.jpg",
+      "status": "Falta iniciar demo",
+      "detail": "Página de Evolution con LAUNCH GAME y aviso de cookies.",
+      "runId": "67eca922-be18-49d4-848c-721231429eae"
+    }
+  ]
+}
