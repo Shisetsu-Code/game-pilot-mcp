@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "id": "f0154896-c4ed-49dd-a7aa-e238de6d091a",
+  "demoConfirmed": true,
+  "urls": [
+    "https://www.pragmaticplay.com/en/games/3-dancing-monkeys/",
+    "https://www.pragmaticplay.com/en/games/3-buzzing-wilds/",
+    "https://rubyplay.com/games/diamond-explosion-7s/",
+    "https://gs.1spin4win.com:10443/gmh5/games.html?game=AllwaysEgypt&currency=EUR&config=1&freeplay=true&language=en&exit=none",
+    "https://belatragames.com/es/games/game/20-super-stars",
+    "https://bgaming-network.com/play/Adventures/FUN?server=demo",
+    "https://rubyplay.com/games/frankenstein-triple-volt/",
+    "https://games.evolution.com/slots/10001-nights-megaways/",
+    "https://gamesdemo.kaga88.com/?g=ElvisGuava1960&p=demo&u=141261189&t=123&ak=accessKey&cr=USD&loc=es&l=https%3A%2F%2Fwww.kaga88.com%2F"
+  ],
+  "source": {
+    "repository": "Shisetsu-Code/Hybrid-actions",
+    "commit": "1014816f2952a9019369ddde5c0ad55c40e33d78",
+    "path": "config/providers.json",
+    "linkedFrom": "Shisetsu-Code/hybrid-cloud-fuzzer",
+    "selected": [
+      {
+        "id": "pragmatic:3-dancing-monkeys",
+        "provider": "pragmatic",
+        "name": "3-dancing-monkeys",
+        "url": "https://www.pragmaticplay.com/en/games/3-dancing-monkeys/"
+      },
+      {
+        "id": "pragmatic:3-buzzing-wilds",
+        "provider": "pragmatic",
+        "name": "3-buzzing-wilds",
+        "url": "https://www.pragmaticplay.com/en/games/3-buzzing-wilds/"
+      },
+      {
+        "id": "rubyplay:diamond-explosion-7s",
+        "provider": "rubyplay",
+        "name": "diamond-explosion-7s",
+        "url": "https://rubyplay.com/games/diamond-explosion-7s/"
+      },
+      {
+        "id": "1spin4win:all-ways-egypt",
+        "provider": "1spin4win",
+        "name": "all-ways-egypt",
+        "url": "https://gs.1spin4win.com:10443/gmh5/games.html?game=AllwaysEgypt&currency=EUR&config=1&freeplay=true&language=en&exit=none"
+      },
+      {
+        "id": "belatra:20-super-stars",
+        "provider": "belatra",
+        "name": "20-super-stars",
+        "url": "https://belatragames.com/es/games/game/20-super-stars"
+      },
+      {
+        "id": "bgaming:adventures",
+        "provider": "bgaming",
+        "name": "adventures",
+        "url": "https://bgaming-network.com/play/Adventures/FUN?server=demo"
+      },
+      {
+        "id": "rubyplay:frankenstein-triple-volt",
+        "provider": "rubyplay",
+        "name": "frankenstein-triple-volt",
+        "url": "https://rubyplay.com/games/frankenstein-triple-volt/"
+      },
+      {
+        "id": "redtiger:10001-nights-megaways",
+        "provider": "redtiger",
+        "name": "10001-nights-megaways",
+        "url": "https://games.evolution.com/slots/10001-nights-megaways/"
+      },
+      {
+        "id": "ka_gaming:elvisguava1960",
+        "provider": "ka_gaming",
+        "name": "elvisguava1960",
+        "url": "https://gamesdemo.kaga88.com/?g=ElvisGuava1960&p=demo&u=141261189&t=123&ak=accessKey&cr=USD&loc=es&l=https%3A%2F%2Fwww.kaga88.com%2F"
+      }
+    ]
+  }
+}

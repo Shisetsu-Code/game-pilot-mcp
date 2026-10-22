@@ -21,7 +21,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: cloud-game-browsers
+  group: cloud-game-browsers-${{ inputs.run_id || inputs.queue_path || 'launcher' }}
   cancel-in-progress: false
 jobs:
   browsers:
