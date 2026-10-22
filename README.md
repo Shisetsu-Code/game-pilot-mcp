@@ -30,6 +30,12 @@ Cada envío guarda `queues/UUID.json` en el repositorio privado y dispara `brows
 
 En ChatGPT: **«Usá list_runs y procesá mi nueva tanda por lotes»**. El MCP debe estar conectado; el lanzador no crea inferencia autónoma. Se puede cerrar el formulario o apagar la PC después del envío. El seguimiento está en Actions y `get_run_status`. Los links se conservan completos en el repositorio privado: los accesos temporales pueden vencer y las URLs con credenciales incrustadas se rechazan.
 
+Para salir por tu VPN, activar **Usar WireGuard para esta tanda** y seleccionar el archivo `.conf` desde el mismo formulario. El lanzador valida el perfil y lo envía mediante stdin a GitHub Actions Secrets; el repositorio guarda sólo su referencia. Cada perfil normalizado tiene un nombre independiente, reutilizable, para que otra subida no cambie tandas en espera. No se copia el archivo a la carpeta del proyecto ni se muestra su contenido. Si usás el mismo perfil al mismo tiempo en otro equipo, el servidor puede cambiar el destino del peer: usar un perfil dedicado a GitHub.
+
+Se admiten perfiles de cliente estándar con una interfaz, un peer, Address IPv4, DNS por IP y `AllowedIPs` que incluya `0.0.0.0/0`. Las rutas IPv6 pueden ir por el túnel si el perfil las incluye; la salida IPv6 directa queda bloqueada. No se aceptan scripts PreUp/PostUp/PreDown/PostDown, Table, SaveConfig ni extensiones de proveedores. Una configuración incompatible se rechaza antes de publicar la tanda. El workflow verifica ruta, handshake y salida HTTPS antes de abrir juegos, instala bloqueo de salida directa IPv4/IPv6 y limpia el perfil temporal al terminar. Todo el tráfico del job, incluido el MCP, pasa por la VPN; el servidor debe permitir acceso a GitHub, Cloudflare y los juegos.
+
+Los perfiles se conservan como secretos `WG_CONFIG_<huella>` hasta que el propietario los elimine desde Settings → Secrets and variables → Actions. No eliminarlos mientras haya tandas que los usen. No hay borrado automático ni renovación de credenciales. La conexión con tu servidor sólo puede comprobarse al enviar tu configuración real.
+
 Si se guardó la lista pero falló el inicio de Actions, el lanzador lo indica: iniciar manualmente el workflow con el `queue_path` mostrado, sin volver a crear una tanda. La carga de una misma lista es idempotente; un error intermedio al crear la tanda se bloquea para revisión y no repite compras.
 
 ### Alternativa: todo local

@@ -1,22 +1,30 @@
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {spawn} from 'node:child_process';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 import {validateQueue} from '../src/queue.js';
+import {normalizeWireGuard} from './wireguard-config.mjs';
 const repo='Shisetsu-Code/game-pilot-mcp';
 function github(args,input){return new Promise((resolve,reject)=>{const child=spawn('gh',args,{windowsHide:true,stdio:['pipe','pipe','pipe']}),out=[],err=[];child.stdout.on('data',b=>out.push(b));child.stderr.on('data',b=>err.push(b));child.on('error',()=>reject(Error('GitHub CLI no está disponible. Instalar gh e iniciar sesión.')));child.on('exit',code=>code===0?resolve(Buffer.concat(out).toString()):reject(Error(Buffer.concat(err).toString().slice(0,600)||'GitHub no respondió.')));child.stdin.on('error',()=>{});child.stdin.end(input);});}
 export async function publishQueue(raw,{gh=github}={}){
  const queue=validateQueue(raw),minutes=Number(raw.minutes);
  if(!Number.isInteger(minutes)||minutes<1||minutes>300)throw Error('La duración debe ser entre 1 y 300 minutos.');
  if(!/^[a-f0-9-]{36}$/.test(queue.id))throw Error('invalid_queue_id');
+ let wireguardSecret='';
+ if(raw.wireguardEnabled===true){
+  const {config}=normalizeWireGuard(raw.wireguardConfig);
+  wireguardSecret='WG_CONFIG_'+createHash('sha256').update(config).digest('hex').toUpperCase();
+  await gh(['secret','set',wireguardSecret,'--repo',repo],config);
+  queue.wireguardSecret=wireguardSecret;
+ }
  const queuePath='queues/'+queue.id+'.json';
  await gh(['api','--method','PUT','repos/'+repo+'/contents/'+queuePath,'--input','-'],JSON.stringify({message:'queue: submit '+queue.urls.length+' demo games [skip ci]',content:Buffer.from(JSON.stringify(queue,null,2)+'\n').toString('base64'),branch:'main'}));
  let dispatchOutput='';
- try{dispatchOutput=await gh(['workflow','run','browsers.yml','--repo',repo,'--ref','main','-f','minutes='+minutes,'-f','queue_path='+queuePath]);}
+ try{dispatchOutput=await gh(['workflow','run','browsers.yml','--repo',repo,'--ref','main','-f','minutes='+minutes,'-f','queue_path='+queuePath,...(wireguardSecret?['-f','wireguard_secret='+wireguardSecret]:[])]);}
  catch(error){return {published:true,started:false,queueId:queue.id,queuePath,message:'Lista guardada como '+queuePath+'. No se pudo iniciar la ejecución: '+error.message,url:'https://github.com/'+repo+'/actions/workflows/browsers.yml'};}
  const execution=dispatchOutput.match(/https:\/\/github\.com\/Shisetsu-Code\/game-pilot-mcp\/actions\/runs\/\d+/)?.[0];
- return {published:true,started:true,queueId:queue.id,games:queue.urls.length,url:execution||'https://github.com/'+repo+'/actions/workflows/browsers.yml'};
+ return {published:true,started:true,queueId:queue.id,games:queue.urls.length,wireguard:!!wireguardSecret,url:execution||'https://github.com/'+repo+'/actions/workflows/browsers.yml'};
 }
 export function launcherServer({publish=publishQueue}={}){
  const token=randomUUID();return createServer(async(req,res)=>{const origin='http://127.0.0.1:'+res.socket.localPort;

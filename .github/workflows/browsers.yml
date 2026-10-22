@@ -14,6 +14,10 @@ on:
         description: 'Lista publicada por el lanzador (queues/UUID.json)'
         required: false
         default: ''
+      wireguard_secret:
+        description: 'Referencia privada generada por el lanzador; vacío = sin VPN'
+        required: false
+        default: ''
 permissions:
   contents: read
 concurrency:
@@ -36,12 +40,27 @@ jobs:
           [[ "$MINUTES" =~ ^[0-9]+$ ]] && (( 10#$MINUTES >= 1 && 10#$MINUTES <= 300 ))
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Prepare WireGuard profile
+        if: inputs.wireguard_secret != ''
+        env:
+          WG_CONFIG: ${{ secrets[inputs.wireguard_secret] }}
+          WG_SECRET_NAME: ${{ inputs.wireguard_secret }}
+        run: |
+          [[ "$WG_SECRET_NAME" =~ ^WG_CONFIG_[A-F0-9]{64}$ ]] || exit 1
+          node scripts/wireguard-config.mjs
+      - name: Install WireGuard tools
+        if: inputs.wireguard_secret != ''
+        run: sudo apt-get install -y wireguard-tools resolvconf iptables
+      - name: Connect and verify WireGuard
+        if: inputs.wireguard_secret != ''
+        run: bash scripts/wireguard-up.sh
       - name: Load submitted queue into MCP
         if: inputs.queue_path != ''
         env:
           PILOT_QUEUE_PATH: ${{ inputs.queue_path }}
           PILOT_URL: https://game-pilot-mcp.braian-n-l.workers.dev
           PILOT_MCP_TOKEN: ${{ secrets.PILOT_MCP_TOKEN }}
+          PILOT_WIREGUARD_SECRET: ${{ inputs.wireguard_secret }}
         run: node scripts/load-queue.mjs
       - name: Four browser processes with two games each
         env:
@@ -57,3 +76,6 @@ jobs:
           result=$?
           if [ "$result" -eq 124 ]; then exit 0; fi
           exit "$result"
+      - name: Disconnect WireGuard and remove private profile
+        if: always() && inputs.wireguard_secret != ''
+        run: bash scripts/wireguard-down.sh
