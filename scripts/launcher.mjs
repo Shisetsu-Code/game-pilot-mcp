@@ -12,9 +12,11 @@ export async function publishQueue(raw,{gh=github}={}){
  if(!/^[a-f0-9-]{36}$/.test(queue.id))throw Error('invalid_queue_id');
  const queuePath='queues/'+queue.id+'.json';
  await gh(['api','--method','PUT','repos/'+repo+'/contents/'+queuePath,'--input','-'],JSON.stringify({message:'queue: submit '+queue.urls.length+' demo games [skip ci]',content:Buffer.from(JSON.stringify(queue,null,2)+'\n').toString('base64'),branch:'main'}));
- try{await gh(['workflow','run','browsers.yml','--repo',repo,'--ref','main','-f','minutes='+minutes,'-f','queue_path='+queuePath]);}
- catch(error){return {published:true,started:false,queueId:queue.id,queuePath,message:'Lista guardada. No se pudo iniciar la ejecución: '+error.message,url:'https://github.com/'+repo+'/actions/workflows/browsers.yml'};}
- return {published:true,started:true,queueId:queue.id,games:queue.urls.length,url:'https://github.com/'+repo+'/actions/workflows/browsers.yml'};
+ let dispatchOutput='';
+ try{dispatchOutput=await gh(['workflow','run','browsers.yml','--repo',repo,'--ref','main','-f','minutes='+minutes,'-f','queue_path='+queuePath]);}
+ catch(error){return {published:true,started:false,queueId:queue.id,queuePath,message:'Lista guardada como '+queuePath+'. No se pudo iniciar la ejecución: '+error.message,url:'https://github.com/'+repo+'/actions/workflows/browsers.yml'};}
+ const execution=dispatchOutput.match(/https:\/\/github\.com\/Shisetsu-Code\/game-pilot-mcp\/actions\/runs\/\d+/)?.[0];
+ return {published:true,started:true,queueId:queue.id,games:queue.urls.length,url:execution||'https://github.com/'+repo+'/actions/workflows/browsers.yml'};
 }
 export function launcherServer({publish=publishQueue}={}){
  const token=randomUUID();return createServer(async(req,res)=>{const origin='http://127.0.0.1:'+res.socket.localPort;
