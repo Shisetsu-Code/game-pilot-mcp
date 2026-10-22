@@ -1,0 +1,6 @@
+{
+ "name":"game-pilot-mcp", "main":"src/worker.js", "compatibility_date":"2026-10-22", "compatibility_flags":["nodejs_compat"],
+ "observability":{"enabled":true,"traces":{"enabled":true}},
+ "d1_databases":[{"binding":"DB","database_name":"game-pilot","database_id":"REPLACE_WITH_NEW_DATABASE_ID","migrations_dir":"migrations"}],
+ "r2_buckets":[{"binding":"IMAGES","bucket_name":"game-pilot-private"}]
+}

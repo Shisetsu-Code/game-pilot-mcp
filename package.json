@@ -1,0 +1,7 @@
+{
+  "name": "game-pilot-mcp", "version": "0.1.0", "private": true, "type": "module",
+  "engines": {"node": ">=22.16.0"},
+  "scripts": {"test":"node --test test/*.test.js", "test:browser":"node --test test/*.browser.js", "check":"node scripts/check.mjs", "dev":"node scripts/local.mjs", "runner":"node runner/supervisor.mjs", "mcp:stdio":"node scripts/stdio.mjs", "import:catalog":"node scripts/import-catalog.mjs", "deploy":"wrangler deploy", "db:local":"wrangler d1 migrations apply game-pilot --local", "db:remote":"wrangler d1 migrations apply game-pilot --remote"},
+  "dependencies":{"@modelcontextprotocol/sdk":"1.32.1","playwright":"1.64.1","sharp":"0.35.5","zod":"4.6.7"},
+  "devDependencies":{"wrangler":"4.99.0"}
+}

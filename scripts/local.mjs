@@ -1,0 +1,14 @@
+import {createServer} from 'node:http';import {DatabaseSync} from 'node:sqlite';import {mkdir,readFile,writeFile} from 'node:fs/promises';import {resolve,dirname} from 'node:path';import {pathToFileURL} from 'node:url';import worker from '../src/worker.js';
+export async function createLocalEnv({directory='data',mcpToken=process.env.PILOT_MCP_TOKEN,runnerToken=process.env.PILOT_RUNNER_TOKEN,catalog,allowFixture=false}={}){
+ if(!mcpToken||!runnerToken||mcpToken.length<32||runnerToken.length<32||mcpToken===runnerToken)throw Error('Set two distinct private tokens of at least 32 characters');
+ await mkdir(directory,{recursive:true});const sql=new DatabaseSync(resolve(directory,'pilot.sqlite'));sql.exec(await readFile(new URL('../migrations/0001.sql',import.meta.url),'utf8'));
+ const DB={prepare(query){const stmt=sql.prepare(query);let args=[];return {bind(...a){args=a;return this;},async first(){return stmt.get(...args)||null;},async all(){return {results:stmt.all(...args)};},async run(){const r=stmt.run(...args);return {meta:{changes:Number(r.changes)}};}};}};
+ const path=key=>{if(!/^[a-zA-Z0-9_.\/-]+$/.test(key)||key.includes('..')||key.startsWith('/'))throw Error('invalid_storage_key');return resolve(directory,'objects',key);};
+ const IMAGES={async put(key,value){const file=path(key);await mkdir(dirname(file),{recursive:true});await writeFile(file,typeof value==='string'?value:Buffer.from(value));},async get(key){try{const bytes=await readFile(path(key));return {body:bytes,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)};}catch(e){if(e.code==='ENOENT')return null;throw e;}}};
+ return {DB,IMAGES,MCP_TOKEN:mcpToken,RUNNER_TOKEN:runnerToken,CATALOG:catalog,ALLOW_FIXTURE:allowFixture,close:()=>sql.close()};
+}
+export async function startLocalServer(env,{port=4176}={}){
+ const server=createServer(async(req,res)=>{try{if(!['127.0.0.1','localhost'].includes((req.headers.host||'').split(':')[0])){res.writeHead(403);res.end();return;}const chunks=[];let size=0;for await(const c of req){size+=c.length;if(size>2000000){res.writeHead(413);res.end();return;}chunks.push(c);}const request=new Request('http://'+req.headers.host+req.url,{method:req.method,headers:req.headers,...(!['GET','HEAD'].includes(req.method)?{body:Buffer.concat(chunks)}:{})});const response=await worker.fetch(request,env);res.writeHead(response.status,Object.fromEntries(response.headers));res.end(Buffer.from(await response.arrayBuffer()));}catch{res.writeHead(500);res.end('{"error":"local_server_error"}');}});
+ await new Promise(r=>server.listen(port,'127.0.0.1',r));return server;
+}
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){const env=await createLocalEnv();await startLocalServer(env);console.log('Game Pilot MCP listening at http://127.0.0.1:4176/mcp');}
