@@ -1,12 +1,12 @@
 {
   "images": 64,
-  "imageBytes": 575516,
+  "imageBytes": 548375,
   "batches": 20,
   "maxBatch": 8,
   "actions": 56,
   "workers": 4,
   "sessions": 8,
-  "elapsedMs": 7507,
-  "averageImageBytes": 8992,
+  "elapsedMs": 8682,
+  "averageImageBytes": 8568,
   "note": "Deterministic fixture reviewer, not a visual AI inference benchmark."
 }

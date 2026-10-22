@@ -36,9 +36,9 @@ Goals: `buy`, `spin`, `navigate`, `continue`, `pick`, `inspect`. Inputs: `click`
 
 Analizar las pantallas juntas. Para cada una identificar estado, opciones visibles, página del menú y si la ronda está activa. Enviar `annotate_observations` por lote. No usar `idle` si sólo se sabe que no hubo una excepción.
 
-Después de una acción, el resultado queda `observed`. Una compra se confirma con `review_results` sólo tras verificar la secuencia y el estado resultante. Si el bonus sigue activo, solicitar otra imagen: no emitir otra compra o tirada. Un resultado incierto exige reconciliación y nunca un retry del mismo clic.
+Después de una acción, el resultado queda `observed`. Una compra se confirma con `review_results` sólo tras verificar la secuencia y el estado resultante. Si el bonus sigue activo, solicitar otra imagen: no emitir otra compra o tirada. Si requiere pulsar Continuar o elegir un elemento, enviar `goal: continue|pick` y `roundCommandId` con el identificador de la compra/tirada pendiente. Cada paso usa una observación nueva y revisada; la compra original permanece pendiente hasta terminar el bonus. Un resultado incierto exige reconciliación y nunca un retry del mismo clic.
 
-`update_coverage` conserva todas las opciones descubiertas, incluso las deshabilitadas. `menuExhausted` requiere haber comprobado scroll y páginas. Una compra distinta se identifica por su opción y configuración, no por sus coordenadas, que pueden cambiar.
+`update_coverage` acumula todas las opciones descubiertas, incluso las deshabilitadas; no borra las de páginas anteriores. Usar un `id` estable para cada combinación de opción/configuración y `pageId` para la página donde se vio. Una opción que estuvo habilitada sigue siendo parte de la cobertura aunque luego se deshabilite; `currentlyDisabled` registra su condición más reciente. `menuExhausted` requiere haber comprobado scroll y páginas. Una compra distinta se identifica por su opción y configuración, no por sus coordenadas, que pueden cambiar.
 
 El BFS conserva la frontera por juego. Consultar `get_game_graph`, seleccionar la rama pendiente de menor profundidad que se pueda alcanzar sin repetir compras y marcar el nodo expandido cuando sus salidas estén registradas. No enumerar todos los premios aleatorios como si fueran ramas nuevas.
 

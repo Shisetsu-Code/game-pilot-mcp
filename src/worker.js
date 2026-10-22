@@ -21,7 +21,7 @@ export default {
    const a=await readJson(request);const routes={
     '/runner/runs':()=>pilot.availableRuns(),'/runner/failure':()=>pilot.failSession(a.sessionId,a.leaseId,a.reason),'/runner/claim':()=>pilot.claimSession(a.runId,a.owner),'/runner/renew':()=>pilot.renew(a.sessionId,a.leaseId),'/runner/state':()=>pilot.runnerState(a.sessionId,a.leaseId),
     '/runner/observe':()=>pilot.captured(a.sessionId,a.leaseId,a.observation),'/runner/command':()=>pilot.command(a.sessionId,a.leaseId),'/runner/issued':()=>pilot.issued(a.sessionId,a.leaseId,a.commandId),
-    '/runner/finish':()=>pilot.finish(a.sessionId,a.leaseId,a.commandId,a.result),'/runner/event':()=>pilot.runnerEvent(a.sessionId,a.leaseId,a.event),'/runner/ack':()=>pilot.acknowledge(a.sessionId,a.leaseId,a.ack)
+    '/runner/finish':()=>pilot.finish(a.sessionId,a.leaseId,a.commandId,a.result),'/runner/event':()=>pilot.runnerEvent(a.sessionId,a.leaseId,a.event),'/runner/ack':()=>pilot.acknowledge(a.sessionId,a.leaseId,a.ack,a.generation)
    };if(routes[url.pathname])return json(await routes[url.pathname]());
   }
   if(runner&&request.method==='PUT'&&url.pathname==='/runner/image'){

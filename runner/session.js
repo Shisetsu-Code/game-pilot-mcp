@@ -16,7 +16,7 @@ export async function openDemo(page,game,onEvent=async()=>{}){
 export async function runSession(browser,client,session,{signal,onState=()=>{}}={}){
  const context=await browser.newContext({viewport:{width:1280,height:720},serviceWorkers:'block'}),page=await context.newPage();page.setDefaultTimeout(4000);
  const base={sessionId:session.id,leaseId:session.leaseId};let localObservation=null,localImage=null,lastHeartbeat=0;
- const speed=new SpeedController({compatible:false});let lastVerified=0,appliedFactor=1,pageErrors=0;
+ const speed=new SpeedController({compatible:false});let lastVerified=0,appliedFactor=1,pageErrors=0,lastControlGeneration=null;
  page.on('pageerror',()=>pageErrors++);
  const setupEvent=event=>client.call('event',{...base,event});
  async function publish(detail=false){if(session.game.provider==='pragmatic')await dismissCatalogueOverlay(page,setupEvent);const shot=await captureObservation(page,{detail});await client.upload(shot.observation.imageRef,shot.imageBytes);localObservation=await client.call('observe',{...base,observation:shot.observation});localImage=shot.imageBytes;return shot;}
@@ -24,9 +24,11 @@ export async function runSession(browser,client,session,{signal,onState=()=>{}}=
   await openDemo(page,session.game,setupEvent);await client.call('renew',base);await publish();onState({type:'session_ready',sessionId:session.id});
   while(!signal?.aborted){
    if(Date.now()-lastHeartbeat>15000){await client.call('renew',base);lastHeartbeat=Date.now();}
-   const state=await client.call('state',base);if(state.runState==='stopped'){await client.call('ack',{...base,ack:'stopped'});break;}
+   const state=await client.call('state',base);
+   if(state.controlGeneration!==lastControlGeneration){try{await client.call('ack',{...base,ack:state.runState,generation:state.controlGeneration});lastControlGeneration=state.controlGeneration;}catch(error){if(error.message==='stale_control_generation')continue;throw error;}}
+   if(state.runState==='stopped')break;
    if(state.phase==='completed')break;
-   if(state.runState==='paused'){await client.call('ack',{...base,ack:'paused'});await sleep(500);continue;}
+   if(state.runState==='paused'){await sleep(500);continue;}
    if(state.captureRequested){await publish(state.captureRequested.detail);continue;}
    // Compatibility is explicit: animations only when the inspected frame exposes them.
    const selected=await selectGameFrame(page);const count=await selected.frame.evaluate(()=>document.getAnimations().length);if(count>0&&!speed.disabled)speed.compatible=true;

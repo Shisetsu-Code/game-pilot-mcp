@@ -4,6 +4,7 @@ export function point(x){requireValue(Number.isFinite(x)&&x>=0&&x<=1,'invalid_co
 export function validateDecision(d){
  requireValue(d&&typeof d==='object');for(const k of ['commandId','sessionId','observationId','leaseId'])id(d[k]);
  requireValue(Number.isSafeInteger(d.revision)&&d.revision>0,'invalid_revision');
+ if(d.roundCommandId!==undefined)id(d.roundCommandId);
  requireValue(['move','click','drag','scroll','key'].includes(d.action?.type),'invalid_action');
  if(['move','click','drag'].includes(d.action.type)){point(d.action.x);point(d.action.y);}
  if(d.action.type==='drag'){point(d.action.toX);point(d.action.toY);}

@@ -36,3 +36,12 @@ test('visual target guard tolerates unrelated animation but rejects a changed ta
 test('late catalogue cookie overlay is dismissed with a recorded setup click',async t=>{
  assert.equal(typeof dismissCatalogueOverlay,'function');const {page}=await fixture(t);await page.evaluate(()=>{const button=document.createElement('button');button.textContent='Reject All';button.onclick=()=>button.remove();document.body.append(button);});const events=[];await dismissCatalogueOverlay(page,event=>events.push(event));assert.equal(await page.getByRole('button',{name:'Reject All',exact:true}).count(),0);assert.equal(events[0].type,'setup_input');assert.ok(Number.isFinite(events[0].position.x));
 });
+test('frame movement during journal request blocks input after durable intent',async t=>{
+ const {page}=await fixture(t);const shot=await captureObservation(page),c=shot.observation.controls.find(c=>c.label==='Buy Bonus');let issued=0;
+ const result=await executeInput(page,{commandId:'race',action:{type:'click',x:c.x,y:c.y},target:'Buy Bonus'},shot.observation,{issued:async()=>{issued++;await page.locator('iframe').evaluate(el=>el.style.marginLeft='300px');}},{sourceImage:shot.imageBytes});
+ assert.equal(result.status,'blocked');assert.equal(result.notExecuted,true);assert.equal(issued,1);assert.equal(await page.frames()[1].evaluate(()=>window.clicks),0);
+});
+test('partially clipped bordered iframe maps DOM center into the visible crop',async t=>{
+ const {page}=await fixture(t);await page.locator('iframe').evaluate(el=>{el.style.marginLeft='-50px';el.style.border='5px solid black';});const shot=await captureObservation(page),c=shot.observation.controls.find(c=>c.label==='Buy Bonus');
+ const actual=await page.frames()[1].locator('#buy').boundingBox();const mapped=shot.observation.geometry.clip.x+c.x*shot.observation.geometry.clip.width;assert.ok(Math.abs(mapped-(actual.x+actual.width/2))<1);assert.equal(shot.observation.geometry.clip.width,755);
+});
