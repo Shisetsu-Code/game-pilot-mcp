@@ -2,7 +2,9 @@
 
 ## Estado de acceso inicial
 
-La primera comprobación de GitHub falló por la restricción de red del entorno; al comprobarlo con red autorizada, la sesión de Shisetsu-Code resultó válida. El repositorio privado ya fue creado y publicado, y su CI pasó. `wrangler whoami` sí confirmó que falta autenticación de Cloudflare. No se leyó ni se reutilizó ningún secreto del fuzzer existente; completar ese acceso no requiere pegar secretos en el chat.
+El repositorio privado está publicado y el MCP está desplegado en https://game-pilot-mcp.braian-n-l.workers.dev/mcp. Se reutilizó la sesión existente de Wrangler al actualizar la dependencia del proyecto a 4.152.0, compatible con su configuración cifrada. No fue necesario iniciar otra sesión ni copiar credenciales del fuzzer. Recursos nuevos: D1 `game-pilot`, R2 privado `game-pilot-private` y KV `game-pilot-mcp-oauth`.
+
+Versión desplegada: `75bbd34d-d509-4a8d-a0e5-6bdaad553429`. Evidencia funcional remota en `deployment-evidence.json`. La autorización desde la cuenta real de ChatGPT y las compras en proveedores reales siguen pendientes de esa conexión.
 
 ## GitHub
 
@@ -16,7 +18,7 @@ La copia local actual ya tiene `origin` configurado. No crear otro repositorio d
 
 ## Cloudflare
 
-Los nombres siguientes pertenecen exclusivamente al nuevo proyecto:
+Los recursos siguientes ya están creados y vinculados en `wrangler.jsonc`. Los comandos de creación son referencia para otra instalación; no repetirlos en esta cuenta:
 
 ```powershell
 npx wrangler login
@@ -42,6 +44,8 @@ Usar tres valores distintos de al menos 32 caracteres, generados localmente. Int
 El bucket R2 permanece privado. OAuth guarda clientes/grants en el KV nuevo. `global_fetch_strictly_public` protege las recuperaciones de metadatos de cliente de la biblioteca OAuth.
 
 Configurar en el entorno local de ejecutores `PILOT_URL` al origen HTTPS y `PILOT_RUNNER_TOKEN` al secreto remoto correspondiente; ejecutar `npm run runner`. No poner el secreto OAuth ni el MCP en los ejecutores remotos si no los necesitan. Los cuatro procesos pueden descubrir tandas sin un run ID fijo.
+
+En esta instalación, `.\Start-Remote-Game-Pilot.ps1` usa `data/remote.env`. La clave para aprobar el consentimiento OAuth está en `data/connection-key.txt`; sólo introducirla en la página HTTPS del nuevo MCP. Estos archivos están excluidos de Git. Los ejecutores necesitan mantener esta PC encendida y el supervisor activo.
 
 ## Verificación después de publicar
 
