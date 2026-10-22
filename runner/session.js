@@ -1,5 +1,6 @@
 import {captureObservation,selectGameFrame} from './capture.js';import {executeInput} from './input.js';import {SpeedController,applyAnimationSpeed} from './speed.js';
 import {captureContinuously,isTransientCaptureError,isTerminalDocumentStatus} from './capture-retry.js';
+import {keepPageActive} from './activity.js';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function setupClick(locator,label,onEvent){let box;try{if(await locator.count()!==1||!(await locator.isVisible()))return false;box=await locator.boundingBox();}catch(error){await onEvent({type:'setup_blocked',label,reason:error.message.split('\n')[0]});return false;}if(!box)return false;await onEvent({type:'setup_input',label,action:'click',position:{x:box.x+box.width/2,y:box.y+box.height/2},at:Date.now()});try{await locator.click({timeout:4000});return true;}catch(error){await onEvent({type:'setup_blocked',label,reason:error.message.split('\n')[0]});return false;}}
 export async function dismissCatalogueOverlay(page,onEvent=async()=>{}){return setupClick(page.getByRole('button',{name:/^reject all$|^reject cookies$/i}),'catalogue.reject-cookies',onEvent);}
@@ -40,6 +41,8 @@ export async function runSession(browser,client,session,{signal,onState=()=>{}}=
   await client.upload(shot.observation.imageRef,shot.imageBytes);const observed=await client.call('observe',{...base,observation:shot.observation,automatic});lastCaptureAt=Date.now();if(observed){localObservation=observed;localImage=shot.imageBytes;}return shot;
  }
  try{
+  await keepPageActive(page);
+  await setupEvent({type:'browser_activity_policy',focusEmulation:true,backgroundThrottling:false});
   await openDemo(page,session.game,setupEvent);await client.call('renew',base);await prepareCatalogue(page,setupEvent);await publish();onState({type:'session_ready',sessionId:session.id});
   while(!signal?.aborted){
    if(leaseError)throw leaseError;

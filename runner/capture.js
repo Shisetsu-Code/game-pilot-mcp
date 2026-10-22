@@ -1,4 +1,5 @@
 import sharp from 'sharp';import {createHash} from 'node:crypto';
+import {activateGameFrame,readPageActivity} from './activity.js';
 export async function selectGameFrame(page){
  const vp=page.viewportSize();let best={frame:page.mainFrame(),frameIndex:0,clip:{x:0,y:0,width:vp.width,height:vp.height},frameOrigin:{x:0,y:0,scaleX:1,scaleY:1}};
  let largest=0;for(const [frameIndex,frame] of page.frames().entries()){if(frame===page.mainFrame())continue;try{const element=await frame.frameElement(),box=await element.boundingBox();if(!box||box.width<200||box.height<150)continue;
@@ -8,6 +9,7 @@ export async function selectGameFrame(page){
 }
 export async function captureObservation(page,{quality=45,maxWidth=960,detail=false}={}){
  const selected=await selectGameFrame(page);const {frame,frameIndex,clip,frameOrigin}=selected;
+ await activateGameFrame(page,frame);
  const original=await page.screenshot({type:'jpeg',quality:detail?80:quality,clip,timeout:20000});
  const imageBytes=await sharp(original).resize({width:Math.min(Math.round(clip.width),detail?1600:maxWidth),withoutEnlargement:true}).jpeg({quality:detail?80:quality}).toBuffer();
  const meta=await sharp(imageBytes).metadata();
@@ -17,5 +19,6 @@ export async function captureObservation(page,{quality=45,maxWidth=960,detail=fa
  const state={screen:'unclassified',visibleOptions:mapped.map(c=>c.label),roundPhase:'unknown'};
  const fixture=await frame.evaluate(()=>document.querySelector('[data-pilot-state]')?.getAttribute('data-pilot-state')||null);if(fixture){try{Object.assign(state,JSON.parse(fixture));}catch{}}
  const imageSha256=createHash('sha256').update(imageBytes).digest('hex');
- return {imageBytes,observation:{observationId:crypto.randomUUID(),profile:{quality:detail?80:quality,maxWidth:detail?1600:maxWidth},geometry:{clip,frameOrigin,imageWidth:meta.width,imageHeight:meta.height,frameIndex,frameId:frame.url().split('?')[0],viewport:page.viewportSize()},imageRef:imageSha256+'.jpg',imageSha256,state,controls:mapped}};
+ const activity=await readPageActivity(frame);
+ return {imageBytes,observation:{observationId:crypto.randomUUID(),profile:{quality:detail?80:quality,maxWidth:detail?1600:maxWidth},geometry:{clip,frameOrigin,imageWidth:meta.width,imageHeight:meta.height,frameIndex,frameId:frame.url().split('?')[0],viewport:page.viewportSize()},imageRef:imageSha256+'.jpg',imageSha256,state,controls:mapped,activity}};
 }

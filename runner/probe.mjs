@@ -4,13 +4,14 @@ import {chromium} from 'playwright';
 import {CloudClient} from './cloud-client.js';
 import {openDemo,prepareCatalogue} from './session.js';
 import {captureObservation} from './capture.js';
+import {activeBrowserArgs,keepPageActive} from './activity.js';
 const out='artifacts/cloud-probe';await mkdir(out,{recursive:true});
 const cleanUrl=raw=>{try{const u=new URL(raw);return u.origin+u.pathname;}catch{return String(raw).slice(0,200);}};
 const cleanError=error=>String(error?.message||error).replace(/https?:\/\/[^\s)"']+/g,cleanUrl).slice(0,600);
 if(!process.env.PILOT_URL||!process.env.PILOT_RUNNER_TOKEN||!process.env.PILOT_RUN_ID)throw Error('Probe requires an explicit cloud run');
 if(process.env.WG_CONFIG)throw Error('This diagnostic is explicitly without VPN');
 if(process.argv[2]==='--worker'){
- const index=Number(process.argv[3]),browser=await chromium.launch({headless:true});
+ const index=Number(process.argv[3]),browser=await chromium.launch({headless:true,args:activeBrowserArgs});
  const client=new CloudClient({url:process.env.PILOT_URL,token:process.env.PILOT_RUNNER_TOKEN});
  try{await Promise.all([0,1].map(async()=>{for(;;){
   const session=await client.call('claim',{runId:process.env.PILOT_RUN_ID,owner:'worker-'+index});if(!session)break;
@@ -20,6 +21,7 @@ if(process.argv[2]==='--worker'){
   page.on('response',r=>{if(r.request().isNavigationRequest()&&r.frame()===page.mainFrame())report.httpStatus=r.status();});
   const heartbeat=setInterval(()=>client.call('renew',base).catch(()=>{}),10000);
   try{
+   await keepPageActive(page);
    await openDemo(page,session.game,event=>client.call('event',{...base,event}));
    await page.waitForTimeout(12000);
    if(await prepareCatalogue(page,event=>client.call('event',{...base,event})))await page.waitForTimeout(12000);
