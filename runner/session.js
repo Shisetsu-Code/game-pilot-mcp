@@ -1,6 +1,7 @@
 import {captureObservation,selectGameFrame} from './capture.js';import {executeInput} from './input.js';import {SpeedController,applyAnimationSpeed} from './speed.js';
 import {captureContinuously,isTransientCaptureError,isTerminalDocumentStatus} from './capture-retry.js';
 import {keepPageActive} from './activity.js';
+import {optionalFrameRead} from './frame-read.js';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function setupClick(locator,label,onEvent){let box;try{if(await locator.count()!==1||!(await locator.isVisible()))return false;box=await locator.boundingBox();}catch(error){await onEvent({type:'setup_blocked',label,reason:error.message.split('\n')[0]});return false;}if(!box)return false;await onEvent({type:'setup_input',label,action:'click',position:{x:box.x+box.width/2,y:box.y+box.height/2},at:Date.now()});try{await locator.click({timeout:4000});return true;}catch(error){await onEvent({type:'setup_blocked',label,reason:error.message.split('\n')[0]});return false;}}
 export async function dismissCatalogueOverlay(page,onEvent=async()=>{}){return setupClick(page.getByRole('button',{name:/^reject all$|^reject cookies$/i}),'catalogue.reject-cookies',onEvent);}
@@ -57,7 +58,8 @@ export async function runSession(browser,client,session,{signal,onState=()=>{}}=
    const waitingCapture=state.phase==='uncertain'||['unclassified','loading','intro'].includes(state.observation?.state.screen)||state.observation?.state.roundPhase==='active';
    if(waitingCapture&&!['queued','executing','blocked'].includes(state.phase)&&!(state.observation?.decisionUntil>Date.now())&&Date.now()-lastCaptureAt>=5000){await prepareCatalogue(page,setupEvent);await publish(false,true);continue;}
    // Compatibility is explicit: animations only when the inspected frame exposes them.
-   const selected=await selectGameFrame(page);const count=await selected.frame.evaluate(()=>document.getAnimations().length);if(count>0&&!speed.disabled)speed.compatible=true;
+   let count=0,selected;
+   if(state.verifiedRounds>=3||appliedFactor>1){selected=await selectGameFrame(page);count=await optionalFrameRead(selected.frame,()=>document.getAnimations().length,0);if(count>0&&!speed.disabled)speed.compatible=true;}
    const idle=state.observation?.state.roundPhase==='idle';
    if(state.verifiedRounds>lastVerified){for(let i=lastVerified;i<state.verifiedRounds;i++)speed.recordTransition({verified:true,roundComplete:true});lastVerified=state.verifiedRounds;}
    if(['uncertain','blocked'].includes(state.phase))speed.recordTransition({uncertain:true});

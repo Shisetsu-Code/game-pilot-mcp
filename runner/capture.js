@@ -1,5 +1,6 @@
 import sharp from 'sharp';import {createHash} from 'node:crypto';
 import {activateGameFrame,readPageActivity,screenshotNow} from './activity.js';
+import {optionalFrameRead} from './frame-read.js';
 export async function selectGameFrame(page){
  const vp=page.viewportSize();let best={frame:page.mainFrame(),frameIndex:0,clip:{x:0,y:0,width:vp.width,height:vp.height},frameOrigin:{x:0,y:0,scaleX:1,scaleY:1}};
  let largest=0;for(const [frameIndex,frame] of page.frames().entries()){if(frame===page.mainFrame())continue;try{const element=await frame.frameElement(),box=await element.boundingBox();if(!box||box.width<200||box.height<150)continue;
@@ -13,11 +14,11 @@ export async function captureObservation(page,{quality=45,maxWidth=960,detail=fa
  const original=await screenshotNow(page,{quality:detail?80:quality,clip});
  const imageBytes=await sharp(original).resize({width:Math.min(Math.round(clip.width),detail?1600:maxWidth),withoutEnlargement:true}).jpeg({quality:detail?80:quality}).toBuffer();
  const meta=await sharp(imageBytes).metadata();
- const controls=await frame.evaluate(()=>Array.from(document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"],a')).slice(0,150).map((el,i)=>{const r=el.getBoundingClientRect(),style=getComputedStyle(el);return {id:'dom-'+i,label:(el.innerText||el.getAttribute('aria-label')||el.value||'').trim().slice(0,160),left:r.left,top:r.top,width:r.width,height:r.height,disabled:el.disabled===true||el.getAttribute('aria-disabled')==='true',visible:r.width>0&&r.height>0&&style.visibility!=='hidden'&&style.display!=='none'};}).filter(c=>c.visible&&c.label));
+ const controls=await optionalFrameRead(frame,()=>Array.from(document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"],a')).slice(0,150).map((el,i)=>{const r=el.getBoundingClientRect(),style=getComputedStyle(el);return {id:'dom-'+i,label:(el.innerText||el.getAttribute('aria-label')||el.value||'').trim().slice(0,160),left:r.left,top:r.top,width:r.width,height:r.height,disabled:el.disabled===true||el.getAttribute('aria-disabled')==='true',visible:r.width>0&&r.height>0&&style.visibility!=='hidden'&&style.display!=='none'};}).filter(c=>c.visible&&c.label),[]);
  const mapped=controls.map(c=>({...c,x:(frameOrigin.x+(c.left+c.width/2)*frameOrigin.scaleX-clip.x)/clip.width,y:(frameOrigin.y+(c.top+c.height/2)*frameOrigin.scaleY-clip.y)/clip.height})).filter(c=>c.x>=0&&c.x<=1&&c.y>=0&&c.y<=1);
  // Unknown canvas states remain explicitly unknown until a vision reviewer classifies them.
  const state={screen:'unclassified',visibleOptions:mapped.map(c=>c.label),roundPhase:'unknown'};
- const fixture=await frame.evaluate(()=>document.querySelector('[data-pilot-state]')?.getAttribute('data-pilot-state')||null);if(fixture){try{Object.assign(state,JSON.parse(fixture));}catch{}}
+ const fixture=await optionalFrameRead(frame,()=>document.querySelector('[data-pilot-state]')?.getAttribute('data-pilot-state')||null,null);if(fixture){try{Object.assign(state,JSON.parse(fixture));}catch{}}
  const imageSha256=createHash('sha256').update(imageBytes).digest('hex');
  const activity=await readPageActivity(frame);
  return {imageBytes,observation:{observationId:crypto.randomUUID(),profile:{quality:detail?80:quality,maxWidth:detail?1600:maxWidth},geometry:{clip,frameOrigin,imageWidth:meta.width,imageHeight:meta.height,frameIndex,frameId:frame.url().split('?')[0],viewport:page.viewportSize()},imageRef:imageSha256+'.jpg',imageSha256,state,controls:mapped,activity}};

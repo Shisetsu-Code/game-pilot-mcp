@@ -1,5 +1,6 @@
 // Chromium's supported test controls keep independent demo tabs foreground-active.
 // Do not rewrite document.hidden/hasFocus or suppress a game's event handlers.
+import {optionalFrameRead} from './frame-read.js';
 export const activeBrowserArgs = [
  '--disable-background-timer-throttling',
  '--disable-backgrounding-occluded-windows',
@@ -48,7 +49,7 @@ export async function keepPageActive(page) {
   async ensureFrames(){await Promise.all(page.frames().map(attach));},
   async focusGame(frame){
    await attach(frame);
-   if(await frame.evaluate(()=>document.hasFocus()))return;
+   if(await optionalFrameRead(frame,()=>document.hasFocus(),false))return;
    const chain=[];for(let f=frame;f.parentFrame();f=f.parentFrame())chain.unshift(f);
    for(const child of chain){const element=await child.frameElement();try{await element.evaluate(el=>el.focus({preventScroll:true}));}finally{await element.dispose();}}
   },
@@ -66,5 +67,5 @@ export async function screenshotNow(page,{clip,quality}){
 }
 
 export async function readPageActivity(frame) {
- return frame.evaluate(()=>({visibility:document.visibilityState,hidden:document.hidden,focused:document.hasFocus()}));
+ return optionalFrameRead(frame,()=>({visibility:document.visibilityState,hidden:document.hidden,focused:document.hasFocus()}),{visibility:'unknown',hidden:null,focused:null});
 }
