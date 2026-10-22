@@ -1,0 +1,191 @@
+{
+  "checkedAt": "2026-10-22T23:13:08.877Z",
+  "runId": "4b6a5c4e-bc94-493e-9723-2bd2acb11d75",
+  "githubRun": "https://github.com/Shisetsu-Code/game-pilot-mcp/actions/runs/39869009366",
+  "network": "GitHub sin VPN",
+  "verifiedNormalSpins": 6,
+  "purchases": 0,
+  "review": "Capturas revisadas visualmente: ronda activa, rodillos detenidos, botón de giro de vuelta y saldo ficticio actualizado.",
+  "rows": [
+    {
+      "game": "3 Buzzing Wilds",
+      "round": 1,
+      "commandId": "589aca19-07b0-4716-92d8-6cc45fca3b45",
+      "beforeCredit": 100000,
+      "afterCredit": 99998,
+      "bet": 2,
+      "action": {
+        "type": "click",
+        "x": 0.803,
+        "y": 0.929
+      },
+      "position": {
+        "x": 924.82,
+        "y": 611.20875
+      },
+      "sourceObservationId": "287980da-6f0f-4a03-9b79-cb6b17c7966a",
+      "sourceImageRef": "fa845765a0ae840a2da1b7727d0da9feb954ef97304b59befa43a8acdecabec9.jpg",
+      "review": {
+        "sessionId": "4f36b906-aafb-4bb9-86c7-36fcd2bef34f",
+        "observationId": "df4d1d85-b49d-47e2-9409-71d321e7f20f",
+        "leaseId": "3a72c2e0-6fc3-45a3-88e9-ffe0797eb04c",
+        "commandId": "589aca19-07b0-4716-92d8-6cc45fca3b45",
+        "status": "verified",
+        "reason": "First Buzzing Wilds spin completed: settled changed reels, PLACE YOUR BETS and idle spin icon; fictitious credit is 99998.00 versus 100000.00 before.",
+        "at": 1792710514074
+      },
+      "before": "tiradas-pragmatic/1792710319122-4f36b906.jpg",
+      "after": "tiradas-pragmatic/1792710473333-4f36b906.jpg"
+    },
+    {
+      "game": "3 Buzzing Wilds",
+      "round": 2,
+      "commandId": "311a608a-07fa-4822-b247-1e770496bd41",
+      "beforeCredit": 99998,
+      "afterCredit": 99996,
+      "bet": 2,
+      "action": {
+        "type": "click",
+        "x": 0.803,
+        "y": 0.929
+      },
+      "position": {
+        "x": 924.82,
+        "y": 611.20875
+      },
+      "sourceObservationId": "df4d1d85-b49d-47e2-9409-71d321e7f20f",
+      "sourceImageRef": "2be16fdfb0db91237b310af37b9f079048e64d5c223f42dc96931e3ea475385d.jpg",
+      "review": {
+        "sessionId": "4f36b906-aafb-4bb9-86c7-36fcd2bef34f",
+        "observationId": "1d7e5aba-ff2d-4996-84a3-74c8adf906ef",
+        "leaseId": "9c2e8e2c-a0ba-4855-87e3-e7c76cb3577d",
+        "commandId": "311a608a-07fa-4822-b247-1e770496bd41",
+        "status": "verified",
+        "reason": "Second Buzzing Wilds round finished: settled new symbols, PLACE YOUR BETS and idle spin arrow. Credit moved from 99998.00 to 99996.00.",
+        "at": 1792710622513
+      },
+      "before": "tiradas-pragmatic/1792710473333-4f36b906.jpg",
+      "after": "tiradas-pragmatic/1792710604836-4f36b906.jpg"
+    },
+    {
+      "game": "3 Buzzing Wilds",
+      "round": 3,
+      "commandId": "e50b6ff4-93fa-4ead-be41-6e7884a97f50",
+      "beforeCredit": 99996,
+      "afterCredit": 99998,
+      "bet": 2,
+      "action": {
+        "type": "click",
+        "x": 0.803,
+        "y": 0.929
+      },
+      "position": {
+        "x": 924.82,
+        "y": 611.20875
+      },
+      "sourceObservationId": "1d7e5aba-ff2d-4996-84a3-74c8adf906ef",
+      "sourceImageRef": "9dc08acfe494dd85787eb724506e81ba075323f6dc763544ad8f29ef5be04c88.jpg",
+      "review": {
+        "sessionId": "4f36b906-aafb-4bb9-86c7-36fcd2bef34f",
+        "observationId": "67c0ea7d-16be-457b-a87b-464f67d1a458",
+        "leaseId": "7a0d30d8-d84b-4fd2-a970-193b6f706b49",
+        "commandId": "e50b6ff4-93fa-4ead-be41-6e7884a97f50",
+        "status": "verified",
+        "reason": "Third Buzzing Wilds round finished. Two successive images show settled reels, idle spin arrow, WIN 4.00 and stable credit 99998.00: prior 99996.00 minus 2.00 bet plus 4.00 fictitious win.",
+        "at": 1792710784786
+      },
+      "before": "tiradas-pragmatic/1792710604836-4f36b906.jpg",
+      "after": "tiradas-pragmatic/1792710754849-4f36b906.jpg"
+    },
+    {
+      "game": "3 Dancing Monkeys",
+      "round": 1,
+      "commandId": "16d4ca64-5c66-43bc-8ca6-07f51820a760",
+      "beforeCredit": 100000,
+      "afterCredit": 99998.2,
+      "bet": 1.8,
+      "action": {
+        "type": "click",
+        "x": 0.774,
+        "y": 0.897
+      },
+      "position": {
+        "x": 897.5600000000001,
+        "y": 594.2887499999999
+      },
+      "sourceObservationId": "5e5d4ab4-ec0b-4b0a-8f9b-a9d129869820",
+      "sourceImageRef": "384f1aa76ab637d54582d15600eb7b79912579891dabcce5aa94862c575bfbc7.jpg",
+      "review": {
+        "sessionId": "aad13964-6067-46d3-85bb-ca0f589bfaeb",
+        "observationId": "95fbd194-79ef-4e24-a121-a78b9a291c6b",
+        "leaseId": "2ef4867d-02ef-411a-b45e-848e5523e467",
+        "commandId": "16d4ca64-5c66-43bc-8ca6-07f51820a760",
+        "status": "verified",
+        "reason": "First normal spin finished: changed reels are settled, SPIN TO WIN and idle spin arrow are back; fictitious credit is 99998.20 versus 100000.00 before.",
+        "at": 1792710298975
+      },
+      "before": "tiradas-pragmatic/1792710181972-aad13964.jpg",
+      "after": "tiradas-pragmatic/1792710263471-aad13964.jpg"
+    },
+    {
+      "game": "3 Dancing Monkeys",
+      "round": 2,
+      "commandId": "dcf88b0e-9555-4811-893b-fd6e0df4dcf6",
+      "beforeCredit": 99998.2,
+      "afterCredit": 99996.4,
+      "bet": 1.8,
+      "action": {
+        "type": "click",
+        "x": 0.774,
+        "y": 0.897
+      },
+      "position": {
+        "x": 897.5600000000001,
+        "y": 594.2887499999999
+      },
+      "sourceObservationId": "95fbd194-79ef-4e24-a121-a78b9a291c6b",
+      "sourceImageRef": "7491c4f87c494762cabf956208363ea18a11884686bcffd551da24b267bf214a.jpg",
+      "review": {
+        "sessionId": "aad13964-6067-46d3-85bb-ca0f589bfaeb",
+        "observationId": "6879e82b-6c50-4a50-ae42-df50238241cd",
+        "leaseId": "6cb72f33-3a76-4911-873f-83ed3101b97b",
+        "commandId": "dcf88b0e-9555-4811-893b-fd6e0df4dcf6",
+        "status": "verified",
+        "reason": "Second normal spin finished: different settled symbols, SPIN TO WIN and idle spin arrow; credit moved from 99998.20 to 99996.40.",
+        "at": 1792710376145
+      },
+      "before": "tiradas-pragmatic/1792710263471-aad13964.jpg",
+      "after": "tiradas-pragmatic/1792710319125-aad13964.jpg"
+    },
+    {
+      "game": "3 Dancing Monkeys",
+      "round": 3,
+      "commandId": "e6609b2d-09b6-49fa-9597-526561b57d26",
+      "beforeCredit": 99996.4,
+      "afterCredit": 99994.6,
+      "bet": 1.8,
+      "action": {
+        "type": "click",
+        "x": 0.774,
+        "y": 0.897
+      },
+      "position": {
+        "x": 897.5600000000001,
+        "y": 594.2887499999999
+      },
+      "sourceObservationId": "6879e82b-6c50-4a50-ae42-df50238241cd",
+      "sourceImageRef": "fbef1bfd7a74872af8648e1fa662f3afdc44a2100599c3c93b0780ef6a47dba6.jpg",
+      "review": {
+        "sessionId": "aad13964-6067-46d3-85bb-ca0f589bfaeb",
+        "observationId": "21faffc6-d5d1-4b3a-9035-8e2874b927ac",
+        "leaseId": "e124b795-ca8f-447c-ba61-094941b59ac5",
+        "commandId": "e6609b2d-09b6-49fa-9597-526561b57d26",
+        "status": "verified",
+        "reason": "Third normal spin completed: reels changed and are settled; idle arrow and HOLD SPACE message returned. Credit is 99994.60, down by 1.80 from 99996.40.",
+        "at": 1792710424967
+      },
+      "before": "tiradas-pragmatic/1792710319125-aad13964.jpg",
+      "after": "tiradas-pragmatic/1792710393641-aad13964.jpg"
+    }
+  ]
+}

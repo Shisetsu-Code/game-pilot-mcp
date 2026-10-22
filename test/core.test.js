@@ -39,6 +39,10 @@ test('automatic recapture never invalidates a reviewer lease or a queued input',
  assert.equal((await pilot.submitDecisions([decision]))[0].ok,true);
  assert.equal(await pilot.captured(session.id,session.leaseId,{...raw,observationId:'auto-2'},{automatic:true}),null);
  assert.equal((await pilot.command(session.id,session.leaseId)).commandId,decision.commandId);
+ await pilot.deferCommand(session.id,session.leaseId,decision.commandId,'screenshot timeout');
+ assert.equal((await pilot.session(session.id)).commands[decision.commandId].result.notExecuted,true);
+ assert.ok(await pilot.captured(session.id,session.leaseId,{...raw,observationId:'auto-3'},{automatic:true}));
+ assert.ok((await pilot.session(session.id)).captureRequested);
  }finally{db.close();}
 });
 test('lease ownership excludes other workers and stale observations cannot execute',async()=>{
