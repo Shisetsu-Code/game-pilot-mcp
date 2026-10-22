@@ -11,6 +11,7 @@ export default {
   if(!(env.OAUTH_AUTHENTICATED===true&&!runner)&&!(await validBearer(request,runner?env.RUNNER_TOKEN:env.MCP_TOKEN)))return json({error:'unauthorized'},401);
   const origin=request.headers.get('origin');if(origin&&origin!==url.origin&&!(env.ALLOWED_ORIGINS||'').split(',').includes(origin))return json({error:'origin_rejected'},403);
   const pilot=makePilot(env);
+  if(url.pathname==='/v1/launch'&&request.method==='POST')return json(await pilot.startLinkRun(await readJson(request,600000)));
   if(url.pathname==='/mcp'){
    const transport=new WebStandardStreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true,maxRequestBodySize:100000});
    const server=createMcpServer({pilot,images:env.IMAGES});await server.connect(transport);try{return await transport.handleRequest(request);}finally{await server.close();}

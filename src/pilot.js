@@ -1,16 +1,27 @@
 import {id,requireValue,validateDecision,validateObservation,publicDemoUrl} from './contracts.js';
 import {recordState,transition,graphView} from './graph.js';
+import {validateQueue} from './queue.js';
 const uuid=()=>crypto.randomUUID();
 const leaseMs=60000,reviewMs=180000;
 export class Pilot{
  constructor(store,{games=[],allowFixture=false,clock=()=>Date.now()}={}){this.store=store;this.games=games;this.allowFixture=allowFixture;this.clock=clock;}
- async startRun({gameIds}){
+ async startRun({gameIds},approvedGames=this.games){
   requireValue(Array.isArray(gameIds)&&gameIds.length>0&&gameIds.length<=64&&new Set(gameIds).size===gameIds.length,'select_1_to_64_unique_games');
-  const games=await Promise.all(gameIds.map(async gameId=>{const g=this.games.find(x=>x.id===gameId),approval=await this.store.read('demo:'+gameId);requireValue(g&&(g.demo===true||approval),'unverified_demo');return {...g,demo:true,url:publicDemoUrl(g.url,{allowFixture:this.allowFixture})};}));
+  const games=await Promise.all(gameIds.map(async gameId=>{const g=approvedGames.find(x=>x.id===gameId),approval=await this.store.read('demo:'+gameId);requireValue(g&&(g.demo===true||approval),'unverified_demo');return {...g,demo:true,url:publicDemoUrl(g.url,{allowFixture:this.allowFixture})};}));
   const run={id:uuid(),state:'preparing',controlGeneration:0,createdAt:this.clock(),sessions:[],workers:4,gamesPerWorker:2,normalSpins:3};
   await this.store.create('run:'+run.id,run);
   for(const game of games){const s={id:uuid(),runId:run.id,game,phase:'pending',owner:null,leaseId:null,leaseUntil:0,revision:0,observation:null,commands:{},events:[],graph:{nodes:[],edges:[],frontier:[]},coverage:{purchases:{},normalSpins:0,menuExhausted:false,options:[]},speed:{factor:1},ack:null};await this.store.create('session:'+s.id,s);run.sessions.push(s.id);}
   await this.store.change('run:'+run.id,r=>{Object.assign(r,run,{state:'running'});});return {...run,state:'running'};
+ }
+ async startLinkRun(raw){
+  const queue=validateQueue(raw),key='queue:'+queue.id,fingerprint=JSON.stringify(queue);
+  if(!await this.store.create(key,{fingerprint,state:'preparing'})){
+   const prior=await this.store.read(key);requireValue(prior.fingerprint===fingerprint,'queue_conflict');
+   requireValue(prior.runId,'queue_preparing_or_interrupted_do_not_resubmit');return this.run(prior.runId);
+  }
+  const games=queue.urls.map((url,index)=>({id:queue.id+':'+index,provider:/(^|\.)pragmaticplay\.com$/.test(new URL(url).hostname)?'pragmatic':new URL(url).hostname,name:new URL(url).hostname+' / '+(index+1),url,demo:true,source:'user-confirmed-demo-queue',queueId:queue.id}));
+  const run=await this.startRun({gameIds:games.map(g=>g.id)},games);
+  await this.store.change(key,q=>{q.runId=run.id;q.state='ready';});return run;
  }
  async run(runId){id(runId);const r=await this.store.read('run:'+runId);requireValue(r,'run_not_found');return r;}
  async session(sessionId){id(sessionId);const s=await this.store.read('session:'+sessionId);requireValue(s,'session_not_found');return s;}
@@ -83,7 +94,7 @@ export class Pilot{
    c.status=a.status;c.review={...a,at:this.clock()};const edge=s.graph.edges.find(x=>x.commandId===c.commandId);if(edge)edge.status=a.status;
    if(a.status==='verified'){if(c.goal==='buy')s.coverage.purchases[c.target]='verified';if(c.goal==='spin')s.coverage.normalSpins++;}s.events.push({type:'review',...a,at:this.clock()});s.phase=a.status==='verified'?'waiting_decision':'blocked';return {ok:true,commandId:c.commandId};}));}catch(e){out.push({ok:false,commandId:a.commandId,code:e.message});}}return out;}
  async reconcile(a){return this.store.change('session:'+id(a.sessionId),s=>{this.checkReview(s,a);const c=s.commands[a.commandId];requireValue(c&&['uncertain','blocked'].includes(c.status),'no_uncertain_result');requireValue(['verified','blocked'].includes(a.status)&&a.reason.length<=1000,'invalid_reconciliation');c.status=a.status;c.review={...a,at:this.clock()};if(a.status==='verified'){if(c.goal==='buy')s.coverage.purchases[c.target]='verified';if(c.goal==='spin')s.coverage.normalSpins++;}s.events.push({type:'reconciliation',...a,at:this.clock()});s.phase='observed';return {ok:true};});}
- async startReplay(sourceRunId){const bundle=await this.exportReplay(sourceRunId);const replay=await this.startRun({gameIds:bundle.sessions.map(s=>s.game.id)});for(let i=0;i<bundle.sessions.length;i++){const source=bundle.sessions[i];await this.store.change('session:'+replay.sessions[i],s=>{s.replaySteps=Object.values(source.commands).filter(c=>c.status==='verified').sort((a,b)=>a.queuedAt-b.queuedAt).map(c=>({...c,beforeState:source.graph.nodes.find(n=>n.id===c.nodeId)?.state}));s.replaySource=sourceRunId;});}return replay;}
+ async startReplay(sourceRunId){const bundle=await this.exportReplay(sourceRunId);const replay=await this.startRun({gameIds:bundle.sessions.map(s=>s.game.id)},bundle.sessions.map(s=>s.game));for(let i=0;i<bundle.sessions.length;i++){const source=bundle.sessions[i];await this.store.change('session:'+replay.sessions[i],s=>{s.replaySteps=Object.values(source.commands).filter(c=>c.status==='verified').sort((a,b)=>a.queuedAt-b.queuedAt).map(c=>({...c,beforeState:source.graph.nodes.find(n=>n.id===c.nodeId)?.state}));s.replaySource=sourceRunId;});}return replay;}
  async complete(sessionId){const s=await this.session(sessionId);requireValue(graphView(s).complete,'coverage_incomplete');await this.store.change('session:'+s.id,x=>{requireValue(!Object.values(x.commands).some(c=>['queued','issued','observed'].includes(c.status)),'command_pending');x.phase='completed';});await this.store.change('run:'+s.runId,r=>{if(r.assignments?.[s.id])r.assignments[s.id].done=true;});return {ok:true};}
  async runnerState(sessionId,leaseId){const s=await this.session(sessionId);this.guard(s,leaseId);const run=await this.run(s.runId);return {runState:run.state,controlGeneration:run.controlGeneration,phase:s.phase,captureRequested:s.captureRequested,speed:s.speed,observation:s.observation,replaySteps:s.replaySteps,verifiedRounds:Object.values(s.commands).filter(c=>['buy','spin'].includes(c.goal)&&c.status==='verified').length};}
  async captured(sessionId,leaseId,raw){const result=await this.observe(sessionId,leaseId,raw);await this.store.change('session:'+sessionId,s=>{this.guard(s,leaseId);s.captureRequested=null;});return result;}

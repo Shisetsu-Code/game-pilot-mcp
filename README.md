@@ -22,6 +22,18 @@ En la autorización de ChatGPT usar la clave privada de `data/connection-key.txt
 
 ## Empezar en Windows
 
+### Lanzador de links (navegadores en GitHub)
+
+Abrir **`Abrir-Lanzador.cmd`** con doble clic. Pegar un link HTTPS por línea, elegir la duración y pulsar **Enviar y ejecutar en GitHub**. Requiere Node y la sesión de GitHub CLI de esta PC; no requiere instalar Chromium localmente. El lanzador sólo muestra el formulario y publica la lista; los juegos se abren en GitHub.
+
+Cada envío guarda `queues/UUID.json` en el repositorio privado y dispara `browsers.yml`. El workflow carga la lista en Cloudflare y obtiene un run ID; cuatro workers toman hasta dos juegos cada uno. Hasta 64 links por tanda, sin duplicados. Las tandas de GitHub se ejecutan una por vez. Si una ya está activa, la siguiente espera.
+
+En ChatGPT: **«Usá list_runs y procesá mi nueva tanda por lotes»**. El MCP debe estar conectado; el lanzador no crea inferencia autónoma. Se puede cerrar el formulario o apagar la PC después del envío. El seguimiento está en Actions y `get_run_status`. Los links se conservan completos en el repositorio privado: los accesos temporales pueden vencer y las URLs con credenciales incrustadas se rechazan.
+
+Si se guardó la lista pero falló el inicio de Actions, el lanzador lo indica: iniciar manualmente el workflow con el `queue_path` mostrado, sin volver a crear una tanda. La carga de una misma lista es idempotente; un error intermedio al crear la tanda se bloquea para revisión y no repite compras.
+
+### Alternativa: todo local
+
 Requiere Node.js 22.16+ y acceso a los paquetes oficiales.
 
 ```powershell

@@ -5,6 +5,7 @@ export function createMcpServer({pilot,images}){
  const server=new McpServer({name:'game-pilot-mcp',version:'0.1.0'},{instructions});
  function tool(name,description,inputSchema,fn){server.registerTool(name,{description,inputSchema},async args=>{try{return await fn(args);}catch(e){return {...text({error:e.message}),isError:true};}});}
  const run={runId:z.string()},session={sessionId:z.string()};
+ tool('list_runs','Discover active game queues submitted from the launcher or MCP.',{},async()=>text(await pilot.availableRuns()));
  tool('list_providers','Providers with imported catalog counts; no promise of compatibility.',{},async()=>text(Object.entries(Object.groupBy(pilot.games,g=>g.provider)).map(([provider,games])=>({provider,games:games.length,verifiedDemos:games.filter(g=>g.demo).length}))));
  tool('list_games','List selectable catalog entries; demo=true entries can start.',{provider:z.string().optional(),offset:z.number().int().min(0).default(0),limit:z.number().int().min(1).max(100).default(20)},async a=>{const games=pilot.games.filter(g=>!a.provider||g.provider===a.provider);return text({total:games.length,games:games.slice(a.offset,a.offset+a.limit)});});
  tool('start_run','Start 1–64 verified demos, maximum four executors with two games each.',{gameIds:z.array(z.string()).min(1).max(64)},async a=>text(await pilot.startRun(a)));

@@ -10,6 +10,10 @@ on:
         description: 'Run ID opcional; vacío espera tandas nuevas del MCP'
         required: false
         default: ''
+      queue_path:
+        description: 'Lista publicada por el lanzador (queues/UUID.json)'
+        required: false
+        default: ''
 permissions:
   contents: read
 concurrency:
@@ -32,11 +36,18 @@ jobs:
           [[ "$MINUTES" =~ ^[0-9]+$ ]] && (( 10#$MINUTES >= 1 && 10#$MINUTES <= 300 ))
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Load submitted queue into MCP
+        if: inputs.queue_path != ''
+        env:
+          PILOT_QUEUE_PATH: ${{ inputs.queue_path }}
+          PILOT_URL: https://game-pilot-mcp.braian-n-l.workers.dev
+          PILOT_MCP_TOKEN: ${{ secrets.PILOT_MCP_TOKEN }}
+        run: node scripts/load-queue.mjs
       - name: Four browser processes with two games each
         env:
           PILOT_URL: https://game-pilot-mcp.braian-n-l.workers.dev
           PILOT_RUNNER_TOKEN: ${{ secrets.PILOT_RUNNER_TOKEN }}
-          PILOT_RUN_ID: ${{ inputs.run_id }}
+          PILOT_RUN_ID: ${{ env.PILOT_RUN_ID || inputs.run_id }}
           PILOT_HEADLESS: 'true'
           MINUTES: ${{ inputs.minutes }}
         run: |

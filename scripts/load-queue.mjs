@@ -1,0 +1,11 @@
+import {readFile,appendFile} from 'node:fs/promises';
+import {validateQueue} from '../src/queue.js';
+const path=process.env.PILOT_QUEUE_PATH;
+if(!/^queues\/[a-f0-9-]{36}\.json$/.test(path||''))throw Error('invalid_queue_path');
+const queue=validateQueue(JSON.parse(await readFile(path,'utf8')));
+const response=await fetch(new URL('/v1/launch',process.env.PILOT_URL),{method:'POST',headers:{authorization:'Bearer '+process.env.PILOT_MCP_TOKEN,'content-type':'application/json'},body:JSON.stringify(queue),signal:AbortSignal.timeout(30000)});
+const result=await response.json();if(!response.ok)throw Error(result.error||'queue_import_failed');
+if(!/^[a-f0-9-]{36}$/.test(result.id))throw Error('invalid_run_id');
+await appendFile(process.env.GITHUB_ENV,'PILOT_RUN_ID='+result.id+'\n');
+await appendFile(process.env.GITHUB_STEP_SUMMARY,`Tanda cargada: \`${result.id}\` — ${queue.urls.length} juegos. En ChatGPT usar list_runs y luego get_observations.\n`);
+console.log(JSON.stringify({runId:result.id,games:queue.urls.length}));
