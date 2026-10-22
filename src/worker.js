@@ -8,7 +8,7 @@ export default {
  async fetch(request,env){try{
   const url=new URL(request.url);if(url.pathname==='/health'){if(!env.DB||!env.IMAGES)return json({ok:false,reason:'bindings_missing'},503);await env.DB.prepare('SELECT key FROM documents LIMIT 1').first();return json({ok:true,version:'0.1.0',schemaVersion:1,workers:4,gamesPerWorker:2});}
   const runner=url.pathname.startsWith('/runner/');if(!env.MCP_TOKEN||!env.RUNNER_TOKEN)return json({error:'authentication_not_configured'},503);
-  if(!(await validBearer(request,runner?env.RUNNER_TOKEN:env.MCP_TOKEN)))return json({error:'unauthorized'},401);
+  if(!(env.OAUTH_AUTHENTICATED===true&&!runner)&&!(await validBearer(request,runner?env.RUNNER_TOKEN:env.MCP_TOKEN)))return json({error:'unauthorized'},401);
   const origin=request.headers.get('origin');if(origin&&origin!==url.origin&&!(env.ALLOWED_ORIGINS||'').split(',').includes(origin))return json({error:'origin_rejected'},403);
   const pilot=makePilot(env);
   if(url.pathname==='/mcp'){
@@ -19,7 +19,7 @@ export default {
   if(url.pathname==='/v1/image'&&request.method==='GET'){const key=url.searchParams.get('key');requireValue(/^[a-f0-9]{64}\.jpg$/.test(key),'invalid_image_key');const object=await env.IMAGES.get(key);return object?new Response(object.body||await object.arrayBuffer(),{headers:{'content-type':'image/jpeg','cache-control':'no-store'}}):json({error:'not_found'},404);}
   if(runner&&request.method==='POST'){
    const a=await readJson(request);const routes={
-    '/runner/claim':()=>pilot.claimSession(a.runId,a.owner),'/runner/renew':()=>pilot.renew(a.sessionId,a.leaseId),'/runner/state':()=>pilot.runnerState(a.sessionId,a.leaseId),
+    '/runner/runs':()=>pilot.availableRuns(),'/runner/failure':()=>pilot.failSession(a.sessionId,a.leaseId,a.reason),'/runner/claim':()=>pilot.claimSession(a.runId,a.owner),'/runner/renew':()=>pilot.renew(a.sessionId,a.leaseId),'/runner/state':()=>pilot.runnerState(a.sessionId,a.leaseId),
     '/runner/observe':()=>pilot.captured(a.sessionId,a.leaseId,a.observation),'/runner/command':()=>pilot.command(a.sessionId,a.leaseId),'/runner/issued':()=>pilot.issued(a.sessionId,a.leaseId,a.commandId),
     '/runner/finish':()=>pilot.finish(a.sessionId,a.leaseId,a.commandId,a.result),'/runner/event':()=>pilot.runnerEvent(a.sessionId,a.leaseId,a.event),'/runner/ack':()=>pilot.acknowledge(a.sessionId,a.leaseId,a.ack)
    };if(routes[url.pathname])return json(await routes[url.pathname]());

@@ -9,5 +9,5 @@ export class SpeedController{
 // No global timer/performance monkey-patching. Only accessible animation playback.
 export async function applyAnimationSpeed(frame,factor){return frame.evaluate(value=>{
  const animations=document.getAnimations();for(const animation of animations)animation.updatePlaybackRate(value);
- return {method:'web-animation',effectiveFactor:factor,animations:animations.length};
+ return {method:'web-animation',effectiveFactor:value,animations:animations.length};
 },factor);}

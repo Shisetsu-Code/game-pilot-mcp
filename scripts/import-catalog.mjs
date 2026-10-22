@@ -1,0 +1,7 @@
+import {writeFile} from 'node:fs/promises';import {pathToFileURL} from 'node:url';import {id,publicDemoUrl} from '../src/contracts.js';
+export function normalizeCatalog(config,commit){if(!/^[a-f0-9]{40}$/.test(commit))throw Error('immutable_commit_required');
+ const providers=config.providers.map(p=>({id:id(p.id),name:p.name||p.id,catalogFile:p.catalogFile,games:p.games?.length||0}));
+ const games=config.providers.flatMap(p=>(p.games||[]).map(g=>({id:id(p.id+':'+g.id),provider:p.id,name:g.name||g.id,url:publicDemoUrl(g.url),...(g.symbol?{symbol:g.symbol}:{}),demo:false})));
+ if(new Set(games.map(g=>g.id)).size!==games.length)throw Error('duplicate_catalog_id');return {source:{repository:'Shisetsu-Code/Hybrid-actions',commit,path:'config/providers.json'},providers,games};
+}
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){const commit=process.argv[2];if(!/^[a-f0-9]{40}$/.test(commit||''))throw Error('Usage: npm run import:catalog -- <40-character-commit>');const r=await fetch('https://raw.githubusercontent.com/Shisetsu-Code/Hybrid-actions/'+commit+'/config/providers.json');if(!r.ok)throw Error('catalog_download_failed');const catalog=normalizeCatalog(await r.json(),commit);await writeFile(new URL('../config/providers.json',import.meta.url),JSON.stringify(catalog));console.log(JSON.stringify({providers:catalog.providers.length,games:catalog.games.length,commit}));}

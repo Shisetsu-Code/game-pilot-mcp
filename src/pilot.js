@@ -6,7 +6,7 @@ export class Pilot{
  constructor(store,{games=[],allowFixture=false,clock=()=>Date.now()}={}){this.store=store;this.games=games;this.allowFixture=allowFixture;this.clock=clock;}
  async startRun({gameIds}){
   requireValue(Array.isArray(gameIds)&&gameIds.length>0&&gameIds.length<=64&&new Set(gameIds).size===gameIds.length,'select_1_to_64_unique_games');
-  const games=gameIds.map(gameId=>{const g=this.games.find(x=>x.id===gameId);requireValue(g&&g.demo===true,'unverified_demo');return {...g,url:publicDemoUrl(g.url,{allowFixture:this.allowFixture})};});
+  const games=await Promise.all(gameIds.map(async gameId=>{const g=this.games.find(x=>x.id===gameId),approval=await this.store.read('demo:'+gameId);requireValue(g&&(g.demo===true||approval),'unverified_demo');return {...g,demo:true,url:publicDemoUrl(g.url,{allowFixture:this.allowFixture})};}));
   const run={id:uuid(),state:'preparing',createdAt:this.clock(),sessions:[],workers:4,gamesPerWorker:2,normalSpins:3};
   await this.store.create('run:'+run.id,run);
   for(const game of games){const s={id:uuid(),runId:run.id,game,phase:'pending',owner:null,leaseId:null,leaseUntil:0,revision:0,observation:null,commands:{},events:[],graph:{nodes:[],edges:[],frontier:[]},coverage:{purchases:{},normalSpins:0,menuExhausted:false,options:[]},speed:{factor:1},ack:null};await this.store.create('session:'+s.id,s);run.sessions.push(s.id);}
@@ -31,9 +31,10 @@ export class Pilot{
   recordState(s,s.observation);if(s.phase!=='uncertain'&&s.phase!=='blocked')s.phase='observed';return s.observation;
  });}
  async getObservations(runId,reviewerId,limit=8){id(reviewerId);requireValue(Number.isInteger(limit)&&limit>=1&&limit<=8,'invalid_batch_limit');const run=await this.run(runId);const out=[];
-  for(const sid of run.sessions){if(out.length>=limit)break;const o=await this.store.change('session:'+sid,s=>{
+  const ordered=await Promise.all(run.sessions.map(sid=>this.session(sid)));ordered.sort((a,b)=>(a.lastReviewAt||0)-(b.lastReviewAt||0));
+  for(const snapshot of ordered){const sid=snapshot.id;if(out.length>=limit)break;const o=await this.store.change('session:'+sid,s=>{
    if(!s.observation||!['observed','waiting_decision','uncertain','blocked'].includes(s.phase)||s.observation.decisionUntil>this.clock())return null;
-   s.observation.decisionLease=uuid();s.observation.decisionUntil=this.clock()+reviewMs;s.observation.reviewerId=reviewerId;if(s.phase==='observed')s.phase='waiting_decision';return {...s.observation,phase:s.phase};
+   s.observation.decisionLease=uuid();s.observation.decisionUntil=this.clock()+reviewMs;s.observation.reviewerId=reviewerId;s.lastReviewAt=this.clock();if(s.phase==='observed')s.phase='waiting_decision';return {...s.observation,phase:s.phase};
   });if(o)out.push(o);}return out;
  }
  async submitDecisions(decisions){requireValue(Array.isArray(decisions)&&decisions.length<=8,'invalid_batch');const results=[];for(const raw of decisions){try{const d=validateDecision(raw),run=await this.run((await this.session(d.sessionId)).runId);requireValue(run.state==='running','run_not_running');
@@ -56,14 +57,16 @@ export class Pilot{
   c.status=result.status;c.result=result;c.finishedAt=this.clock();if(result.observation){validateObservation(result.observation);s.revision++;s.observation={...result.observation,sessionId:s.id,gameId:s.game.id,providerId:s.game.provider,revision:s.revision,capturedAt:this.clock(),decisionUntil:0};recordState(s,s.observation);}
   transition(s,c,result);s.phase=['verified','observed'].includes(result.status)?'observed':result.status;s.events.push({type:'action',...c});return {ok:true};
  });}
- async recover(now=this.clock()){for(const s0 of await this.store.list('session:'))if(s0.leaseUntil&&s0.leaseUntil<=now)await this.store.change('session:'+s0.id,s=>{
+ async recover(now=this.clock(),runId=null){const snapshots=runId?await Promise.all((await this.run(runId)).sessions.map(sid=>this.session(sid))):await this.store.list('session:');for(const s0 of snapshots)if(s0.leaseUntil&&s0.leaseUntil<=now){const token=await this.store.change('session:'+s0.id,s=>{
+  if(s.leaseUntil>now||s.recoveredLease===s.leaseId)return null;
   for(const c of Object.values(s.commands))if(['queued','issued'].includes(c.status))c.status=c.status==='issued'?'uncertain':'blocked';
   if(!['stopped','completed'].includes(s.phase))s.phase=Object.values(s.commands).some(c=>c.status==='uncertain')?'uncertain':'blocked';
- });}
+  s.recoveredLease=s.leaseId;return s.leaseId;
+ });if(token)await this.store.change('run:'+s0.runId,r=>{if(r.assignments?.[s0.id]?.token===token)r.assignments[s0.id].done=true;});}}
  async control(runId,action){requireValue(['pause','resume','stop'].includes(action),'invalid_control');return this.store.change('run:'+id(runId),r=>{requireValue(r.state!=='stopped'||action==='stop','run_stopped');r.state={pause:'paused',resume:'running',stop:'stopped'}[action];return {state:r.state};});}
  async acknowledge(sessionId,leaseId,ack){return this.store.change('session:'+id(sessionId),s=>{this.guard(s,leaseId);s.ack=ack;return {ok:true};});}
  async graph(sessionId){return graphView(await this.session(sessionId));}
- async status(runId){const r=await this.run(runId);const sessions=await Promise.all(r.sessions.map(async sid=>{const s=await this.session(sid);return {id:s.id,gameId:s.game.id,phase:s.phase,owner:s.owner,ack:s.ack,speed:s.speed,coverage:graphView(s)};}));return {...r,sessions};}
+ async status(runId){await this.recover(this.clock(),runId);const r=await this.run(runId);const sessions=await Promise.all(r.sessions.map(async sid=>{const s=await this.session(sid);return {id:s.id,gameId:s.game.id,phase:s.phase,owner:s.owner,ack:s.ack,speed:s.speed,coverage:graphView(s)};}));return {...r,sessions};}
  async coverage(sessionId,{options,menuExhausted,expandedNodeId}){return this.store.change('session:'+id(sessionId),s=>{requireValue(Array.isArray(options)&&options.length<=100,'invalid_options');s.coverage.options=options;s.coverage.menuExhausted=menuExhausted===true;if(expandedNodeId){const n=s.graph.nodes.find(x=>x.id===expandedNodeId);requireValue(n,'node_not_found');n.expanded=true;s.graph.frontier=s.graph.frontier.filter(x=>x!==n.id);}return graphView(s);});}
  async requestObservation(sessionId,detail=false){return this.store.change('session:'+id(sessionId),s=>{s.captureRequested={detail};return {ok:true};});}
  async speed(sessionId,factor){requireValue([1,2,4].includes(factor),'unsupported_factor');return this.store.change('session:'+id(sessionId),s=>{s.speed.requestedFactor=factor;return s.speed;});}
@@ -77,6 +80,17 @@ export class Pilot{
  async reconcile(a){return this.store.change('session:'+id(a.sessionId),s=>{this.checkReview(s,a);const c=s.commands[a.commandId];requireValue(c&&['uncertain','blocked'].includes(c.status),'no_uncertain_result');requireValue(['verified','blocked'].includes(a.status)&&a.reason.length<=1000,'invalid_reconciliation');c.status=a.status;c.review={...a,at:this.clock()};if(a.status==='verified'){if(c.goal==='buy')s.coverage.purchases[c.target]='verified';if(c.goal==='spin')s.coverage.normalSpins++;}s.events.push({type:'reconciliation',...a,at:this.clock()});s.phase='observed';return {ok:true};});}
  async startReplay(sourceRunId){const bundle=await this.exportReplay(sourceRunId);const replay=await this.startRun({gameIds:bundle.sessions.map(s=>s.game.id)});for(let i=0;i<bundle.sessions.length;i++){const source=bundle.sessions[i];await this.store.change('session:'+replay.sessions[i],s=>{s.replaySteps=Object.values(source.commands).filter(c=>c.status==='verified').sort((a,b)=>a.queuedAt-b.queuedAt).map(c=>({...c,beforeState:source.graph.nodes.find(n=>n.id===c.nodeId)?.state}));s.replaySource=sourceRunId;});}return replay;}
  async complete(sessionId){const s=await this.session(sessionId);requireValue(graphView(s).complete,'coverage_incomplete');await this.store.change('session:'+s.id,x=>{requireValue(!Object.values(x.commands).some(c=>['queued','issued','observed'].includes(c.status)),'command_pending');x.phase='completed';});await this.store.change('run:'+s.runId,r=>{if(r.assignments?.[s.id])r.assignments[s.id].done=true;});return {ok:true};}
- async runnerState(sessionId,leaseId){const s=await this.session(sessionId);this.guard(s,leaseId);const run=await this.run(s.runId);return {runState:run.state,phase:s.phase,captureRequested:s.captureRequested,speed:s.speed,observation:s.observation,replaySteps:s.replaySteps};}
+ async runnerState(sessionId,leaseId){const s=await this.session(sessionId);this.guard(s,leaseId);const run=await this.run(s.runId);return {runState:run.state,phase:s.phase,captureRequested:s.captureRequested,speed:s.speed,observation:s.observation,replaySteps:s.replaySteps,verifiedRounds:Object.values(s.commands).filter(c=>['buy','spin'].includes(c.goal)&&c.status==='verified').length};}
  async captured(sessionId,leaseId,raw){const result=await this.observe(sessionId,leaseId,raw);await this.store.change('session:'+sessionId,s=>{this.guard(s,leaseId);s.captureRequested=null;});return result;}
+ async approveDemo(gameId,evidence){id(gameId);const game=this.games.find(x=>x.id===gameId);requireValue(game,'game_not_found');requireValue(typeof evidence==='string'&&evidence.length>=10&&evidence.length<=1000,'demo_evidence_required');publicDemoUrl(game.url,{allowFixture:this.allowFixture});await this.store.create('demo:'+gameId,{gameId,evidence,approvedAt:this.clock()});return {ok:true,gameId,scope:'catalogue_launch_and_fictitious_demo_only'};}
+ async availableRuns(){return (await this.store.list('run:')).filter(r=>r.state==='running').map(r=>({id:r.id,createdAt:r.createdAt}));}
+ async failSession(sessionId,leaseId,reason){const s=await this.session(sessionId);await this.store.change('session:'+id(sessionId),x=>{this.guard(x,leaseId);for(const c of Object.values(x.commands))if(['queued','issued'].includes(c.status))c.status=c.status==='issued'?'uncertain':'blocked';x.phase=Object.values(x.commands).some(c=>c.status==='uncertain')?'uncertain':'blocked';x.events.push({type:'failure',reason:String(reason).slice(0,300),at:this.clock()});x.leaseUntil=this.clock();});await this.store.change('run:'+s.runId,r=>{if(r.assignments?.[s.id])r.assignments[s.id].done=true;});return {ok:true};}
+ async advanceReplay(requests){const results=[];for(const a of requests){try{
+  const s=await this.session(a.sessionId),o=this.checkReview(s,a);requireValue(Array.isArray(s.replaySteps),'not_a_replay');requireValue(!Object.values(s.commands).some(c=>c.status!=='verified'),'review_previous_replay_step');
+  const index=Object.keys(s.commands).length,step=s.replaySteps[index];if(!step){results.push({ok:true,sessionId:s.id,complete:true});continue;}
+  requireValue(step.beforeState?.screen&&step.beforeState.screen!=='unclassified'&&o.state.screen===step.beforeState.screen,'replay_state_mismatch');
+  const matches=o.controls.filter(c=>c.label===step.target&&!c.disabled);requireValue(matches.length===1,'replay_target_not_unique_request_visual_review');
+  const target=matches[0],decision={commandId:'replay-'+index+'-'+s.runId,sessionId:s.id,observationId:o.observationId,revision:o.revision,leaseId:o.decisionLease,action:{...step.action,...(['click','move','drag'].includes(step.action.type)?{x:target.x,y:target.y}:{})},goal:step.goal,target:step.target,reason:'checked replay target in fresh observation'};
+  results.push((await this.submitDecisions([decision]))[0]);
+ }catch(e){results.push({ok:false,sessionId:a.sessionId,code:e.message});}}return results;}
 }

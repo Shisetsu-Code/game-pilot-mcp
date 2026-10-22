@@ -1,12 +1,17 @@
-import {selectGameFrame,captureObservation} from './capture.js';import {point} from '../src/contracts.js';
+import {selectGameFrame,captureObservation} from './capture.js';import {point} from '../src/contracts.js';import sharp from 'sharp';
 export function mapPoint(geometry,{x,y}){point(x);point(y);return {x:geometry.clip.x+x*geometry.clip.width,y:geometry.clip.y+y*geometry.clip.height};}
-export async function executeInput(page,command,observation,journal){
+export async function executeInput(page,command,observation,journal,{sourceImage}={}){
  const current=await selectGameFrame(page),prior=observation.geometry;
  if(current.frameIndex!==prior.frameIndex||current.frame.url().split('?')[0]!==prior.frameId||['x','y','width','height'].some(k=>Math.abs(current.clip[k]-prior.clip[k])>1))throw Error('geometry_changed');
  // Detect same-geometry UI changes before emitting any input.
  const fresh=await captureObservation(page);const target=observation.controls?.find(c=>c.label===command.target);
  if(target&&!fresh.observation.controls.some(c=>c.label===target.label&&!c.disabled&&Math.abs(c.x-target.x)<.005&&Math.abs(c.y-target.y)<.005))throw Error('control_changed');
- if(!target&&command.action.type==='click'&&fresh.observation.imageSha256!==observation.imageSha256)throw Error('canvas_changed_request_new_observation');
+ if(!target&&command.action.type==='click'&&fresh.observation.imageSha256!==observation.imageSha256){
+  if(!sourceImage)throw Error('canvas_changed_request_new_observation');
+  const width=prior.imageWidth,height=prior.imageHeight,x=Math.round(command.action.x*width),y=Math.round(command.action.y*height),left=Math.max(0,x-24),top=Math.max(0,y-24),region={left,top,width:Math.min(48,width-left),height:Math.min(48,height-top)};
+  if(fresh.observation.geometry.imageWidth!==width||fresh.observation.geometry.imageHeight!==height)throw Error('visual_geometry_changed');
+  const [a,b]=await Promise.all([sourceImage,fresh.imageBytes].map(bytes=>sharp(bytes).extract(region).removeAlpha().raw().toBuffer()));let diff=0;for(let i=0;i<a.length;i++)diff+=Math.abs(a[i]-b[i]);if(diff/a.length>10)throw Error('visual_target_changed');
+ }
  const a=command.action,position=['move','click','drag'].includes(a.type)?mapPoint(prior,a):null;
  await journal.issued(command.commandId);
  try{

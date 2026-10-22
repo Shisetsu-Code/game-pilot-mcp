@@ -1,0 +1,4 @@
+import {Client} from '@modelcontextprotocol/sdk/client/index.js';import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+const url=process.env.PILOT_URL,token=process.env.PILOT_MCP_TOKEN;if(!url||!token)throw Error('Set PILOT_URL and PILOT_MCP_TOKEN privately');
+const health=await fetch(url+'/health');if(!health.ok||!(await health.json()).ok)throw Error('health_failed');
+const client=new Client({name:'game-pilot-verifier',version:'1'});try{await client.connect(new StreamableHTTPClientTransport(new URL('/mcp',url),{requestInit:{headers:{authorization:'Bearer '+token}}}));const {tools}=await client.listTools();for(const name of ['start_run','get_observations','submit_decisions','get_game_graph','export_replay'])if(!tools.some(t=>t.name===name))throw Error('missing_tool_'+name);console.log(JSON.stringify({health:true,mcpHandshake:true,tools:tools.length}));}finally{await client.close();}

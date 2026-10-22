@@ -1,6 +1,8 @@
 {
- "name":"game-pilot-mcp", "main":"src/worker.js", "compatibility_date":"2026-10-22", "compatibility_flags":["nodejs_compat"],
+ "name":"game-pilot-mcp", "main":"src/entry.js", "compatibility_date":"2026-10-22", "compatibility_flags":["nodejs_compat","global_fetch_strictly_public"],
  "observability":{"enabled":true,"traces":{"enabled":true}},
  "d1_databases":[{"binding":"DB","database_name":"game-pilot","database_id":"REPLACE_WITH_NEW_DATABASE_ID","migrations_dir":"migrations"}],
- "r2_buckets":[{"binding":"IMAGES","bucket_name":"game-pilot-private"}]
+ "r2_buckets":[{"binding":"IMAGES","bucket_name":"game-pilot-private"}],
+ "kv_namespaces":[{"binding":"OAUTH_KV","id":"REPLACE_WITH_NEW_OAUTH_KV_ID"}],
+ "vars":{"OAUTH_ISSUER":"https://REPLACE_WITH_WORKER_URL.workers.dev"}
 }

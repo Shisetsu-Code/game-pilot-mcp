@@ -89,3 +89,21 @@ test('vision annotations classify unknown screens and checked replay omits uncer
  const result=await pilot.annotate([{sessionId:session.id,observationId:o.observationId,leaseId:o.decisionLease,state:{screen:'purchase-menu',roundPhase:'idle',visibleOptions:['bonus']}}]);assert.equal(result[0].ok,true);assert.equal((await pilot.session(session.id)).observation.state.screen,'purchase-menu');
  const replay=await pilot.startReplay(run.id);assert.ok(replay.id);assert.equal((await pilot.session(replay.sessions[0])).replaySteps.length,0);db.close();
 });
+test('ready batch fairness rotates a repeatedly ready first session',async()=>{
+ const db=dbFixture();let now=1000;const pilot=new Pilot(new Store(db),{games:[game,{...game,id:'g2'}],allowFixture:true,clock:()=>now});const run=await pilot.startRun({gameIds:['fixture','g2']});const a=await pilot.claimSession(run.id,'w'),b=await pilot.claimSession(run.id,'w');await observe(pilot,a,'a');await observe(pilot,b,'b');
+ const [first]=await pilot.getObservations(run.id,'r',1);now++;await observe(pilot,a,'a2');const [next]=await pilot.getObservations(run.id,'r',1);assert.notEqual(next.sessionId,first.sessionId);db.close();
+});
+test('replay advance resolves a unique fresh target and refuses a state mismatch',async()=>{
+ const {db,pilot,session,run}=await setup();assert.equal(typeof pilot.advanceReplay,'function');
+ await pilot.store.change('session:'+session.id,s=>{s.replaySteps=[{commandId:'source',target:'Menu',goal:'navigate',action:point,beforeState:{screen:'base'}}];});
+ await observe(pilot,session);await pilot.store.change('session:'+session.id,s=>{s.observation.controls=[{label:'Menu',x:.6,y:.4,disabled:false}];});const [o]=await pilot.getObservations(run.id,'r');
+ const r=await pilot.advanceReplay([{sessionId:session.id,observationId:o.observationId,leaseId:o.decisionLease}]);assert.equal(r[0].ok,true);const cmd=await pilot.command(session.id,session.leaseId);assert.equal(cmd.action.x,.6);db.close();
+});
+test('idle supervisor discovers runs; failed session preserves uncertainty and releases capacity',async()=>{
+ const {db,pilot,session,run}=await setup();assert.equal(typeof pilot.availableRuns,'function');assert.ok((await pilot.availableRuns()).some(r=>r.id===run.id));assert.equal(typeof pilot.failSession,'function');
+ await pilot.failSession(session.id,session.leaseId,'browser_closed');assert.equal((await pilot.session(session.id)).phase,'blocked');assert.equal((await pilot.run(run.id)).assignments[session.id].done,true);db.close();
+});
+test('status recovers a crashed worker lease and preserves its unconfirmed issued input',async()=>{
+ const {db,pilot,session,run}=await setup();await observe(pilot,session);const [o]=await pilot.getObservations(run.id,'r');const d={commandId:'crash',sessionId:session.id,observationId:o.observationId,revision:o.revision,leaseId:o.decisionLease,action:point,goal:'buy',target:'bonus',reason:'visible'};await pilot.submitDecisions([d]);await pilot.issued(session.id,session.leaseId,'crash');pilot.clock=()=>Date.now()+61000;
+ const status=await pilot.status(run.id);assert.equal(status.sessions[0].phase,'uncertain');assert.equal((await pilot.run(run.id)).assignments[session.id].done,true);db.close();
+});
