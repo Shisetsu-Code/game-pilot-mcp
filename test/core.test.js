@@ -38,6 +38,9 @@ test('automatic recapture never invalidates a reviewer lease or a queued input',
  const decision={commandId:'capture-guard',sessionId:session.id,observationId:leased.observationId,revision:leased.revision,leaseId:leased.decisionLease,action:point,goal:'spin',target:'spin',reason:'visible'};
  assert.equal((await pilot.submitDecisions([decision]))[0].ok,true);
  assert.equal(await pilot.captured(session.id,session.leaseId,{...raw,observationId:'auto-2'},{automatic:true}),null);
+ await pilot.requestObservation(session.id);
+ assert.equal(await pilot.captured(session.id,session.leaseId,{...raw,observationId:'manual-race'}),null);
+ assert.ok((await pilot.session(session.id)).captureRequested,'deferred refresh must remain pending');
  assert.equal((await pilot.command(session.id,session.leaseId)).commandId,decision.commandId);
  await pilot.deferCommand(session.id,session.leaseId,decision.commandId,'screenshot timeout');
  assert.equal((await pilot.session(session.id)).commands[decision.commandId].result.notExecuted,true);

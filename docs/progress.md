@@ -59,3 +59,9 @@ The embedded game can be visible while its native `document.hasFocus()` is false
 The runner now keeps Chromium focus emulation attached for each page and frame target, applies native focus to the selected game iframe without scrolling, and explicitly disables background timer/renderer/occlusion throttling. Navigation refreshes child-target sessions. Each captured observation records the selected game document visibility, hidden flag and native focus. No visibility getters or game event handlers are replaced.
 
 Validation: eight test pages with cross-origin game frames continued requestAnimationFrame and 50 ms timers while another tab was foreground; native focus survived reload and capture. All 13 browser tests passed, including the four-process/eight-session integration; 35 unit tests passed with one Linux-only test skipped locally. This proves the browser policy on fixtures; provider loading/network failures and application-specific pause logic still require live evidence.
+
+### Live capture / browser isolation follow-up
+
+Live exploration exposed screenshot timeouts and a manual-refresh/queued-input race (`command_pending`); the RubyPlay session affected by that race is a controller failure requiring a new test, not a provider failure. Live runner captures now use Chromium compositor screenshots without waiting for web fonts; a regression captures successfully while a font remains pending. Each of the two slots in each of the four worker processes now owns its own Chromium instance. Capture brings that single-game browser forward and focuses its selected game frame. A refresh waits behind an already queued input; the coordinator atomically defers a racing refresh instead of closing the game.
+
+The previous FREEPLAY 15-bonus-spin confirmation debited 670 (10000 → 9330) but the bonus had not been visually verified complete. That pending purchase remains unverified in its original run; it must not be reported as completed.

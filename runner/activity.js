@@ -38,6 +38,13 @@ export async function keepPageActive(page) {
  page.on('framedetached',release);
  page.once('close',()=>{for(const pending of sessions.values())pending.then(cdp=>cdp?.detach()).catch(()=>{});});
  const activity={
+  async screenshot({clip,quality}){
+   let timer;
+   try{const result=await Promise.race([
+    main.send('Page.captureScreenshot',{format:'jpeg',quality,clip:{...clip,scale:1},fromSurface:true,captureBeyondViewport:false}),
+    new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('capture_timeout: compositor screenshot exceeded 10000ms')),10000);}),
+   ]);return Buffer.from(result.data,'base64');}finally{clearTimeout(timer);}
+  },
   async ensureFrames(){await Promise.all(page.frames().map(attach));},
   async focusGame(frame){
    await attach(frame);
@@ -50,7 +57,12 @@ export async function keepPageActive(page) {
 }
 
 export async function activateGameFrame(page,frame){
- const activity=pageActivity.get(page);if(activity)await activity.focusGame(frame);
+ const activity=pageActivity.get(page);if(activity){await page.bringToFront();await activity.focusGame(frame);}
+}
+
+export async function screenshotNow(page,{clip,quality}){
+ const activity=pageActivity.get(page);
+ return activity?activity.screenshot({clip,quality}):page.screenshot({type:'jpeg',quality,clip,timeout:20000});
 }
 
 export async function readPageActivity(frame) {

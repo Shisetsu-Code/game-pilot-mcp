@@ -11,6 +11,18 @@ function step(){if(!document.hidden&&document.hasFocus())ticks.raf++;requestAnim
 requestAnimationFrame(step);setInterval(()=>{if(!document.hidden&&document.hasFocus())ticks.timer++},50);
 </script>`;
 
+test('live compositor capture does not wait for a pending game font',async t=>{
+ const browser=await chromium.launch({headless:true,args:activeBrowserArgs});t.after(()=>browser.close());
+ const page=await browser.newPage();await keepPageActive(page);
+ let requested;const fontRequested=new Promise(r=>requested=r);
+ await page.route('https://fixture.invalid/slow.woff2',()=>{requested();});
+ await page.setContent('<style>@font-face{font-family:slow;src:url(https://fixture.invalid/slow.woff2)}body{font-family:slow}</style><h1>Live demo</h1>',{waitUntil:'domcontentloaded'});
+ await fontRequested;assert.equal(await page.evaluate(()=>document.fonts.status),'loading');
+ const shot=await captureObservation(page);
+ assert.ok(shot.imageBytes.length>100);assert.equal(await page.evaluate(()=>document.fonts.status),'loading');
+ assert.deepEqual(shot.observation.activity,{visibility:'visible',hidden:false,focused:true});
+});
+
 test('eight demo tabs and cross-origin game frames keep rendering while another tab is foreground',async t=>{
  const server=createServer((req,res)=>{res.setHeader('content-type','text/html');res.end(req.url==='/game'?game:`${game}<iframe src="http://localhost:${server.address().port}/game"></iframe>`);});
  await new Promise(r=>server.listen(0,r));

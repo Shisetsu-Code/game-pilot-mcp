@@ -53,7 +53,7 @@ export async function runSession(browser,client,session,{signal,onState=()=>{}}=
    if(state.runState==='stopped')break;
    if(state.phase==='completed')break;
    if(state.runState==='paused'){await sleep(500);continue;}
-   if(state.captureRequested){await prepareCatalogue(page,setupEvent);await publish(state.captureRequested.detail);continue;}
+   if(state.captureRequested&&!['queued','executing'].includes(state.phase)){await prepareCatalogue(page,setupEvent);await publish(state.captureRequested.detail);continue;}
    const waitingCapture=state.phase==='uncertain'||['unclassified','loading','intro'].includes(state.observation?.state.screen)||state.observation?.state.roundPhase==='active';
    if(waitingCapture&&!['queued','executing','blocked'].includes(state.phase)&&!(state.observation?.decisionUntil>Date.now())&&Date.now()-lastCaptureAt>=5000){await prepareCatalogue(page,setupEvent);await publish(false,true);continue;}
    // Compatibility is explicit: animations only when the inspected frame exposes them.

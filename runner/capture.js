@@ -1,5 +1,5 @@
 import sharp from 'sharp';import {createHash} from 'node:crypto';
-import {activateGameFrame,readPageActivity} from './activity.js';
+import {activateGameFrame,readPageActivity,screenshotNow} from './activity.js';
 export async function selectGameFrame(page){
  const vp=page.viewportSize();let best={frame:page.mainFrame(),frameIndex:0,clip:{x:0,y:0,width:vp.width,height:vp.height},frameOrigin:{x:0,y:0,scaleX:1,scaleY:1}};
  let largest=0;for(const [frameIndex,frame] of page.frames().entries()){if(frame===page.mainFrame())continue;try{const element=await frame.frameElement(),box=await element.boundingBox();if(!box||box.width<200||box.height<150)continue;
@@ -10,7 +10,7 @@ export async function selectGameFrame(page){
 export async function captureObservation(page,{quality=45,maxWidth=960,detail=false}={}){
  const selected=await selectGameFrame(page);const {frame,frameIndex,clip,frameOrigin}=selected;
  await activateGameFrame(page,frame);
- const original=await page.screenshot({type:'jpeg',quality:detail?80:quality,clip,timeout:20000});
+ const original=await screenshotNow(page,{quality:detail?80:quality,clip});
  const imageBytes=await sharp(original).resize({width:Math.min(Math.round(clip.width),detail?1600:maxWidth),withoutEnlargement:true}).jpeg({quality:detail?80:quality}).toBuffer();
  const meta=await sharp(imageBytes).metadata();
  const controls=await frame.evaluate(()=>Array.from(document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"],a')).slice(0,150).map((el,i)=>{const r=el.getBoundingClientRect(),style=getComputedStyle(el);return {id:'dom-'+i,label:(el.innerText||el.getAttribute('aria-label')||el.value||'').trim().slice(0,160),left:r.left,top:r.top,width:r.width,height:r.height,disabled:el.disabled===true||el.getAttribute('aria-disabled')==='true',visible:r.width>0&&r.height>0&&style.visibility!=='hidden'&&style.display!=='none'};}).filter(c=>c.visible&&c.label));

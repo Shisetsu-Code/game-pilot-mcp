@@ -37,7 +37,7 @@ export class Pilot{
  }
  async renew(sessionId,leaseId){return this.store.change('session:'+id(sessionId),s=>{this.guard(s,leaseId);s.leaseUntil=this.clock()+leaseMs;return {leaseUntil:s.leaseUntil};});}
  async observe(sessionId,leaseId,raw,{automatic=false}={}){validateObservation(raw);return this.store.change('session:'+id(sessionId),s=>{
-  this.guard(s,leaseId);const pending=Object.values(s.commands).some(c=>c.status==='queued'||c.status==='issued');if(automatic&&(pending||s.observation?.decisionUntil>this.clock()))return null;requireValue(!pending,'command_pending');
+  this.guard(s,leaseId);const pending=Object.values(s.commands).some(c=>c.status==='queued'||c.status==='issued');if(pending||automatic&&s.observation?.decisionUntil>this.clock())return null;
   s.revision++;s.observation={...raw,sessionId:s.id,gameId:s.game.id,providerId:s.game.provider,revision:s.revision,capturedAt:this.clock(),decisionLease:null,decisionUntil:0};
   recordState(s,s.observation);if(s.phase!=='uncertain'&&s.phase!=='blocked')s.phase='observed';return s.observation;
  });}
