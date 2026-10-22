@@ -1,0 +1,44 @@
+name: Probe 20 game links without VPN
+on:
+  workflow_dispatch:
+    inputs:
+      queue_path:
+        description: 'Lista de 20 demos del catálogo'
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: cloud-game-browsers
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium headless shell
+        run: npx playwright install --only-shell chromium
+      - name: Browser dependency preflight
+        run: node --input-type=module -e "import {chromium} from 'playwright'; const b=await chromium.launch({headless:true}); await b.close();"
+      - name: Load selected games
+        env:
+          PILOT_QUEUE_PATH: ${{ inputs.queue_path }}
+          PILOT_URL: https://game-pilot-mcp.braian-n-l.workers.dev
+          PILOT_MCP_TOKEN: ${{ secrets.PILOT_MCP_TOKEN }}
+        run: node scripts/load-queue.mjs
+      - name: Four processes and eight game slots, direct network
+        env:
+          PILOT_URL: https://game-pilot-mcp.braian-n-l.workers.dev
+          PILOT_RUNNER_TOKEN: ${{ secrets.PILOT_RUNNER_TOKEN }}
+        run: node runner/probe.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: twenty-game-probe
+          path: artifacts/cloud-probe/
+          retention-days: 7

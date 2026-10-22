@@ -26,5 +26,5 @@ export function validateObservation(o){
 export function publicDemoUrl(raw,{allowFixture=false}={}){
  const u=new URL(raw);requireValue(!u.username&&!u.password&&!u.hash,'invalid_demo_url');
  if(allowFixture&&u.hostname==='127.0.0.1'&&u.protocol==='http:')return u.href;
- requireValue(u.protocol==='https:'&&!u.port&&/^[a-z0-9.-]+$/i.test(u.hostname)&&u.hostname.includes('.')&&!/^\d+(\.\d+){3}$/.test(u.hostname)&&!/(^|\.)(localhost|local|internal|test|invalid)$/.test(u.hostname),'invalid_demo_url');return u.href;
+ requireValue(u.protocol==='https:'&&/^[a-z0-9.-]+$/i.test(u.hostname)&&u.hostname.includes('.')&&!/^\d+(\.\d+){3}$/.test(u.hostname)&&!/(^|\.)(localhost|local|internal|test|invalid)$/.test(u.hostname),'invalid_demo_url');return u.href;
 }

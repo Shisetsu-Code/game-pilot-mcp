@@ -2,6 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validateQueue} from '../src/queue.js';
 import {Pilot} from '../src/pilot.js';
+test('source catalog HTTPS demos may use an explicit public service port',()=>{
+ const q=validateQueue({id:'demo-port',demoConfirmed:true,urls:['https://gs.1spin4win.com:10443/gmh5/games.html?freeplay=true']});
+ assert.match(q.urls[0],/:10443\//);
+});
 test('queue validates and deduplicates public demo links before publishing',()=>{
  const q=validateQueue({id:'queue-one',demoConfirmed:true,urls:['https://example.com/demo','https://example.com/demo','https://example.org/game']});
  assert.equal(q.urls.length,2);
