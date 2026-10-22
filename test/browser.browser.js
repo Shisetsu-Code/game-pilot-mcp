@@ -18,6 +18,11 @@ test('capture can finish while a slow font outlasts the short control timeout',a
  await page.setContent('<style>@font-face{font-family:slow;src:url(https://fixture.invalid/font.woff2)}body{font-family:slow}</style><h1>Loading demo font</h1>',{waitUntil:'domcontentloaded'});page.setDefaultTimeout(100);
  const result=await captureObservation(page);assert.ok(result.imageBytes.length>100);assert.equal(result.observation.geometry.imageWidth,960);
 });
+test('an intercepted catalogue control is journaled and leaves its screenshot available for visual review',async t=>{
+ const {page}=await fixture(t),events=[];await page.setContent('<button>Reject All</button><div style="position:fixed;inset:0;background:#ddd">Confirm age first</div>');
+ assert.equal(await dismissCatalogueOverlay(page,async e=>events.push(e)),false);
+ assert.equal(events.at(-1).type,'setup_blocked');const capture=await captureObservation(page);assert.ok(capture.imageBytes.length>100);
+});
 test('compressed capture maps iframe coordinates and records one checked click',async t=>{
  assert.equal(typeof captureObservation,'function');const {page}=await fixture(t);
  const shot=await captureObservation(page,{sessionId:'s'});assert.equal(shot.observation.geometry.imageWidth<=960,true);assert.ok(shot.imageBytes.length>0);assert.equal(shot.observation.geometry.clip.x,120);

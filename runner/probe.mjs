@@ -43,5 +43,5 @@ if(process.argv[2]==='--worker'){
  const report={runId:process.env.PILOT_RUN_ID,network:'direct-no-vpn',workers:4,gamesPerWorker:2,purchases:0,spins:0,checkedAt:new Date().toISOString(),games:reports};
  const client=new CloudClient({url:process.env.PILOT_URL,token:process.env.PILOT_RUNNER_TOKEN});await client.call('report',{runId:report.runId,report});
  await writeFile(out+'/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify({total:reports.length,captured:reports.filter(r=>r.captured).length}));
- if(reports.length!==20)process.exitCode=1;
+ if(reports.length!==Number(process.env.PILOT_GAME_COUNT||20))process.exitCode=1;
 }

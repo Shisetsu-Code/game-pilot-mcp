@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "id": "2da898f3-2b1e-4f81-88ff-c662e9e17a6d",
+  "demoConfirmed": true,
+  "urls": [
+    "https://www.pragmaticplay.com/en/games/3-buzzing-wilds/",
+    "https://www.playngo.com/games/tower-run-treasure-steps",
+    "https://www.pragmaticplay.com/en/games/3-dancing-monkeys/"
+  ],
+  "source": {
+    "repository": "Shisetsu-Code/Hybrid-actions",
+    "commit": "1014816f2952a9019369ddde5c0ad55c40e33d78",
+    "path": "config/providers.json",
+    "linkedFrom": "Shisetsu-Code/hybrid-cloud-fuzzer",
+    "selected": [
+      {
+        "id": "pragmatic:3-buzzing-wilds",
+        "provider": "pragmatic",
+        "name": "3-buzzing-wilds",
+        "url": "https://www.pragmaticplay.com/en/games/3-buzzing-wilds/"
+      },
+      {
+        "id": "playngo:1098",
+        "provider": "playngo",
+        "name": "1098",
+        "url": "https://www.playngo.com/games/tower-run-treasure-steps"
+      },
+      {
+        "id": "pragmatic:3-dancing-monkeys",
+        "provider": "pragmatic",
+        "name": "3-dancing-monkeys",
+        "url": "https://www.pragmaticplay.com/en/games/3-dancing-monkeys/"
+      }
+    ],
+    "retryOf": "4691ffe8-cb37-4ba5-9b8d-6140a8622559"
+  }
+}
