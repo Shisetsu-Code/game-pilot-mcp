@@ -1,8 +1,9 @@
 {
  "name":"game-pilot-mcp", "main":"src/entry.js", "compatibility_date":"2026-10-22", "compatibility_flags":["nodejs_compat","global_fetch_strictly_public"],
  "observability":{"enabled":true,"traces":{"enabled":true}},
- "d1_databases":[{"binding":"DB","database_name":"game-pilot","database_id":"REPLACE_WITH_NEW_DATABASE_ID","migrations_dir":"migrations"}],
+ "account_id":"3904fa9871c00ad145ed8f8f5404d1bd",
+ "d1_databases":[{"binding":"DB","database_name":"game-pilot","database_id":"1c6f4840-d73d-491c-80c9-99731a79f921","migrations_dir":"migrations"}],
  "r2_buckets":[{"binding":"IMAGES","bucket_name":"game-pilot-private"}],
- "kv_namespaces":[{"binding":"OAUTH_KV","id":"REPLACE_WITH_NEW_OAUTH_KV_ID"}],
- "vars":{"OAUTH_ISSUER":"https://REPLACE_WITH_WORKER_URL.workers.dev"}
+ "kv_namespaces":[{"binding":"OAUTH_KV","id":"c89bfbcae6404f25aeb4726a932226c1"}],
+ "vars":{"OAUTH_ISSUER":"https://game-pilot-mcp.braian-n-l.workers.dev"}
 }
