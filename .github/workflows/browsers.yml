@@ -39,7 +39,12 @@ jobs:
         run: |
           [[ "$MINUTES" =~ ^[0-9]+$ ]] && (( 10#$MINUTES >= 1 && 10#$MINUTES <= 300 ))
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --only-shell chromium
+      - name: Verify browser dependencies
+        run: |
+          if ! node --input-type=module -e "import {chromium} from 'playwright'; const b=await chromium.launch({headless:true}); await b.close();"; then
+            npx playwright install-deps chromium
+          fi
       - name: Prepare WireGuard profile
         if: inputs.wireguard_secret != ''
         env:

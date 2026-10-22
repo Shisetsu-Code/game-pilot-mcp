@@ -30,6 +30,17 @@ test('D1 CAS preserves concurrent updates and survives new Store instance',async
 async function setup(){const db=dbFixture(),store=new Store(db),pilot=new Pilot(store,{games:[game],allowFixture:true});
  const run=await pilot.startRun({gameIds:['fixture']});const session=await pilot.claimSession(run.id,'worker-0');return {db,store,pilot,run,session};}
 async function observe(p,s,id='obs') {return p.observe(s.id,s.leaseId,{observationId:id,geometry:{clip:{x:0,y:0,width:1280,height:720},imageWidth:960,imageHeight:540,frameId:'main'},imageRef:'a.jpg',imageSha256:'a'.repeat(64),state:{screen:'base',visibleOptions:['buy'],roundPhase:'idle'},controls:[]});}
+test('automatic recapture never invalidates a reviewer lease or a queued input',async()=>{
+ const {db,pilot,run,session}=await setup();try{
+ const raw=await observe(pilot,session);const [leased]=await pilot.getObservations(run.id,'reviewer');
+ assert.equal(await pilot.captured(session.id,session.leaseId,{...raw,observationId:'auto-1'},{automatic:true}),null);
+ assert.equal((await pilot.session(session.id)).observation.observationId,raw.observationId);
+ const decision={commandId:'capture-guard',sessionId:session.id,observationId:leased.observationId,revision:leased.revision,leaseId:leased.decisionLease,action:point,goal:'spin',target:'spin',reason:'visible'};
+ assert.equal((await pilot.submitDecisions([decision]))[0].ok,true);
+ assert.equal(await pilot.captured(session.id,session.leaseId,{...raw,observationId:'auto-2'},{automatic:true}),null);
+ assert.equal((await pilot.command(session.id,session.leaseId)).commandId,decision.commandId);
+ }finally{db.close();}
+});
 test('lease ownership excludes other workers and stale observations cannot execute',async()=>{
  assert.equal(typeof Pilot,'function');const {db,pilot,run,session}=await setup();
  assert.equal(await pilot.claimSession(run.id,'worker-1'),null);

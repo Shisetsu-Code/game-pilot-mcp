@@ -23,7 +23,8 @@ export default {
    const a=await readJson(request);const routes={
     '/runner/report':async()=>{id(a.runId);await pilot.run(a.runId);requireValue(a.report?.runId===a.runId&&Array.isArray(a.report.games)&&a.report.games.length<=64,'invalid_report');await env.IMAGES.put('reports/'+a.runId+'/load-probe.json',JSON.stringify(a.report));return {ok:true};},
     '/runner/runs':()=>pilot.availableRuns(),'/runner/failure':()=>pilot.failSession(a.sessionId,a.leaseId,a.reason),'/runner/claim':()=>pilot.claimSession(a.runId,a.owner),'/runner/renew':()=>pilot.renew(a.sessionId,a.leaseId),'/runner/state':()=>pilot.runnerState(a.sessionId,a.leaseId),
-    '/runner/observe':()=>pilot.captured(a.sessionId,a.leaseId,a.observation),'/runner/command':()=>pilot.command(a.sessionId,a.leaseId),'/runner/issued':()=>pilot.issued(a.sessionId,a.leaseId,a.commandId),
+    '/runner/observe':()=>pilot.captured(a.sessionId,a.leaseId,a.observation,{automatic:a.automatic===true}),'/runner/command':()=>pilot.command(a.sessionId,a.leaseId),'/runner/issued':()=>pilot.issued(a.sessionId,a.leaseId,a.commandId),
+    '/runner/defer':()=>pilot.deferCommand(a.sessionId,a.leaseId,a.commandId,a.reason),
     '/runner/finish':()=>pilot.finish(a.sessionId,a.leaseId,a.commandId,a.result),'/runner/event':()=>pilot.runnerEvent(a.sessionId,a.leaseId,a.event),'/runner/ack':()=>pilot.acknowledge(a.sessionId,a.leaseId,a.ack,a.generation)
    };if(routes[url.pathname])return json(await routes[url.pathname]());
   }
