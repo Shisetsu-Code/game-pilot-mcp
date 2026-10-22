@@ -1,0 +1,48 @@
+name: Cloud game browsers
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: 'Duración de la tanda (1–300 minutos)'
+        required: true
+        default: '30'
+      run_id:
+        description: 'Run ID opcional; vacío espera tandas nuevas del MCP'
+        required: false
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: cloud-game-browsers
+  cancel-in-progress: false
+jobs:
+  browsers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Validate duration
+        env:
+          MINUTES: ${{ inputs.minutes }}
+        run: |
+          [[ "$MINUTES" =~ ^[0-9]+$ ]] && (( 10#$MINUTES >= 1 && 10#$MINUTES <= 300 ))
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Four browser processes with two games each
+        env:
+          PILOT_URL: https://game-pilot-mcp.braian-n-l.workers.dev
+          PILOT_RUNNER_TOKEN: ${{ secrets.PILOT_RUNNER_TOKEN }}
+          PILOT_RUN_ID: ${{ inputs.run_id }}
+          PILOT_HEADLESS: 'true'
+          MINUTES: ${{ inputs.minutes }}
+        run: |
+          test -n "$PILOT_RUNNER_TOKEN" || { echo 'Missing runner secret'; exit 1; }
+          set +e
+          timeout --signal=TERM --kill-after=20s "${MINUTES}m" node runner/supervisor.mjs
+          result=$?
+          if [ "$result" -eq 124 ]; then exit 0; fi
+          exit "$result"
