@@ -45,7 +45,9 @@ El bucket R2 permanece privado. OAuth guarda clientes/grants en el KV nuevo. `gl
 
 Configurar en el entorno local de ejecutores `PILOT_URL` al origen HTTPS y `PILOT_RUNNER_TOKEN` al secreto remoto correspondiente; ejecutar `npm run runner`. No poner el secreto OAuth ni el MCP en los ejecutores remotos si no los necesitan. Los cuatro procesos pueden descubrir tandas sin un run ID fijo.
 
-En esta instalación, `.\Start-Remote-Game-Pilot.ps1` usa `data/remote.env`. La clave para aprobar el consentimiento OAuth está en `data/connection-key.txt`; sólo introducirla en la página HTTPS del nuevo MCP. Estos archivos están excluidos de Git. Los ejecutores necesitan mantener esta PC encendida y el supervisor activo.
+La opción preferida es el workflow manual `browsers.yml` de GitHub Actions: cuatro procesos de navegador y dos sesiones por proceso, sin depender de la PC. `PILOT_RUNNER_TOKEN` está configurado en secretos de Actions; sólo el workflow de navegadores lo recibe. No recibe el secreto MCP ni la clave de consentimiento. Duración predeterminada 30 minutos, máximo 300, sin programación ni reactivación automática. Sólo se permite una ejecución de este workflow a la vez. Para detenerla usar Cancel workflow; revisar en MCP cualquier acción que quede incierta al finalizar. Los datos durables permanecen en Cloudflare.
+
+La alternativa local `.\Start-Remote-Game-Pilot.ps1` usa `data/remote.env`. La clave para aprobar el consentimiento OAuth está en `data/connection-key.txt`; sólo introducirla en la página HTTPS del nuevo MCP. Estos archivos están excluidos de Git.
 
 ## Verificación después de publicar
 

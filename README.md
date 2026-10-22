@@ -4,7 +4,9 @@ MCP para explorar demos con saldo ficticio: **4 procesos Chromium × 2 juegos**,
 
 Fuente publicada en el repositorio privado [Shisetsu-Code/game-pilot-mcp](https://github.com/Shisetsu-Code/game-pilot-mcp). Verificación: 24 pruebas de núcleo/OAuth y nueve de navegador. MCP desplegado: **https://game-pilot-mcp.braian-n-l.workers.dev/mcp**. [Comprobación remota](docs/deployment-evidence.json): autorización OAuth/PKCE, 21 herramientas e imágenes privadas verificadas. La conexión desde la cuenta de ChatGPT aún requiere añadir este MCP.
 
-Para usar el despliegue desde esta PC, ejecutar `.\Start-Remote-Game-Pilot.ps1`. Los navegadores se ejecutan localmente; Cloudflare coordina y guarda el historial. `data/remote.env` contiene la configuración privada generada para esta instalación. En la autorización de ChatGPT usar la clave de `data/connection-key.txt`; no compartirla ni subirla a GitHub. En otra instalación hay que preparar las credenciales privadas y Chromium antes de iniciar los ejecutores.
+Los navegadores pueden ejecutarse enteramente en GitHub: abrir [Cloud game browsers](https://github.com/Shisetsu-Code/game-pilot-mcp/actions/workflows/browsers.yml), pulsar **Run workflow** y elegir una duración (30 minutos por defecto, máximo 300). Dejar `run_id` vacío para esperar tandas nuevas creadas desde MCP. Arranca cuatro procesos con dos juegos cada uno en un runner de GitHub; la PC del usuario puede estar apagada. El secreto de ejecutor está configurado como GitHub Actions secret. Cloudflare coordina y guarda el historial. Se puede detener desde **Cancel workflow**; no hay reinicio automático ni servicio permanente. Consume minutos de GitHub Actions.
+
+En la autorización de ChatGPT usar la clave privada de `data/connection-key.txt`; no compartirla ni subirla a GitHub. Los iniciadores PowerShell son una alternativa local opcional.
 
 ## Qué está implementado
 
