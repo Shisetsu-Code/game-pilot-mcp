@@ -2,7 +2,7 @@ import {fork} from 'node:child_process';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {CloudClient} from './cloud-client.js';
-import {openDemo,dismissCatalogueOverlay} from './session.js';
+import {openDemo,prepareCatalogue} from './session.js';
 import {captureObservation} from './capture.js';
 const out='artifacts/cloud-probe';await mkdir(out,{recursive:true});
 const cleanUrl=raw=>{try{const u=new URL(raw);return u.origin+u.pathname;}catch{return String(raw).slice(0,200);}};
@@ -22,7 +22,7 @@ if(process.argv[2]==='--worker'){
   try{
    await openDemo(page,session.game,event=>client.call('event',{...base,event}));
    await page.waitForTimeout(12000);
-   if(session.game.provider==='pragmatic')await dismissCatalogueOverlay(page,event=>client.call('event',{...base,event}));
+   if(await prepareCatalogue(page,event=>client.call('event',{...base,event})))await page.waitForTimeout(12000);
    const shot=await captureObservation(page);await client.upload(shot.observation.imageRef,shot.imageBytes);await client.call('observe',{...base,observation:shot.observation});
    await writeFile(out+'/'+session.id+'.jpg',shot.imageBytes);
    Object.assign(report,{captured:true,title:await page.title(),finalUrl:cleanUrl(page.url()),frames:page.frames().map(f=>cleanUrl(f.url())),imageRef:shot.observation.imageRef,controls:shot.observation.controls.map(c=>c.label),visibleText:(await page.locator('body').innerText({timeout:3000}).catch(()=>'' )).slice(0,1500)});
@@ -41,6 +41,7 @@ if(process.argv[2]==='--worker'){
   child.on('error',reject);child.on('exit',code=>code===0?resolve():reject(Error('probe_worker_exit_'+code)));
  })));
  const report={runId:process.env.PILOT_RUN_ID,network:'direct-no-vpn',workers:4,gamesPerWorker:2,purchases:0,spins:0,checkedAt:new Date().toISOString(),games:reports};
+ const client=new CloudClient({url:process.env.PILOT_URL,token:process.env.PILOT_RUNNER_TOKEN});await client.call('report',{runId:report.runId,report});
  await writeFile(out+'/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify({total:reports.length,captured:reports.filter(r=>r.captured).length}));
  if(reports.length!==20)process.exitCode=1;
 }

@@ -8,7 +8,7 @@ export async function selectGameFrame(page){
 }
 export async function captureObservation(page,{quality=45,maxWidth=960,detail=false}={}){
  const selected=await selectGameFrame(page);const {frame,frameIndex,clip,frameOrigin}=selected;
- const original=await page.screenshot({type:'jpeg',quality:detail?80:quality,clip});
+ const original=await page.screenshot({type:'jpeg',quality:detail?80:quality,clip,timeout:20000});
  const imageBytes=await sharp(original).resize({width:Math.min(Math.round(clip.width),detail?1600:maxWidth),withoutEnlargement:true}).jpeg({quality:detail?80:quality}).toBuffer();
  const meta=await sharp(imageBytes).metadata();
  const controls=await frame.evaluate(()=>Array.from(document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"],a')).slice(0,150).map((el,i)=>{const r=el.getBoundingClientRect(),style=getComputedStyle(el);return {id:'dom-'+i,label:(el.innerText||el.getAttribute('aria-label')||el.value||'').trim().slice(0,160),left:r.left,top:r.top,width:r.width,height:r.height,disabled:el.disabled===true||el.getAttribute('aria-disabled')==='true',visible:r.width>0&&r.height>0&&style.visibility!=='hidden'&&style.display!=='none'};}).filter(c=>c.visible&&c.label));

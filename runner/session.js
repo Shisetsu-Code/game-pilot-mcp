@@ -2,6 +2,17 @@ import {captureObservation,selectGameFrame} from './capture.js';import {executeI
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function setupClick(locator,label,onEvent){if(await locator.count()!==1||!(await locator.isVisible()))return false;const box=await locator.boundingBox();if(!box)return false;await onEvent({type:'setup_input',label,action:'click',position:{x:box.x+box.width/2,y:box.y+box.height/2},at:Date.now()});await locator.click({timeout:4000});return true;}
 export async function dismissCatalogueOverlay(page,onEvent=async()=>{}){return setupClick(page.getByRole('button',{name:/^reject all$|^reject cookies$/i}),'catalogue.reject-cookies',onEvent);}
+export async function prepareCatalogue(page,onEvent=async()=>{}){
+ let changed=await setupClick(page.getByRole('button',{name:/^reject all$|^reject cookies$|^decline all$/i}),'catalogue.reject-cookies',onEvent);
+ const known=['www.pragmaticplay.com','pragmaticplay.com','belatragames.com','www.belatragames.com','3oaks.com','www.3oaks.com','games.evolution.com'];
+ if(!known.includes(new URL(page.url()).hostname))return changed;
+ const name=/^yes,? i(?: am|'m) (?:18|21)(?:\+| years (?:or older|old or older|old))?$|^sí,? tengo 18 años o más$/i;
+ const age=page.getByRole('button',{name}).or(page.getByRole('link',{name}));
+ if(await setupClick(age,'catalogue.adult-confirmation',onEvent)){changed=true;await page.waitForTimeout(500);}
+ const demo=page.getByRole('button',{name:/^play demo$|^demo$|^jugar demo$/i}).or(page.getByRole('link',{name:/^play demo$|^demo$|^jugar demo$/i}));
+ if(await setupClick(demo,'catalogue.play-demo',onEvent))changed=true;
+ return changed;
+}
 export async function openDemo(page,game,onEvent=async()=>{}){
  await onEvent({type:'navigation',url:game.url.split('?')[0],at:Date.now()});
  await page.goto(game.url,{waitUntil:'domcontentloaded',timeout:45000});
@@ -21,7 +32,7 @@ export async function runSession(browser,client,session,{signal,onState=()=>{}}=
  const setupEvent=event=>client.call('event',{...base,event});
  async function publish(detail=false){if(session.game.provider==='pragmatic')await dismissCatalogueOverlay(page,setupEvent);const shot=await captureObservation(page,{detail});await client.upload(shot.observation.imageRef,shot.imageBytes);localObservation=await client.call('observe',{...base,observation:shot.observation});localImage=shot.imageBytes;return shot;}
  try{
-  await openDemo(page,session.game,setupEvent);await client.call('renew',base);await publish();onState({type:'session_ready',sessionId:session.id});
+  await openDemo(page,session.game,setupEvent);await client.call('renew',base);await prepareCatalogue(page,setupEvent);await publish();onState({type:'session_ready',sessionId:session.id});
   while(!signal?.aborted){
    if(Date.now()-lastHeartbeat>15000){await client.call('renew',base);lastHeartbeat=Date.now();}
    const state=await client.call('state',base);
@@ -29,7 +40,7 @@ export async function runSession(browser,client,session,{signal,onState=()=>{}}=
    if(state.runState==='stopped')break;
    if(state.phase==='completed')break;
    if(state.runState==='paused'){await sleep(500);continue;}
-   if(state.captureRequested){await publish(state.captureRequested.detail);continue;}
+   if(state.captureRequested){await prepareCatalogue(page,setupEvent);await publish(state.captureRequested.detail);continue;}
    // Compatibility is explicit: animations only when the inspected frame exposes them.
    const selected=await selectGameFrame(page);const count=await selected.frame.evaluate(()=>document.getAnimations().length);if(count>0&&!speed.disabled)speed.compatible=true;
    const idle=state.observation?.state.roundPhase==='idle';

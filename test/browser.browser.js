@@ -3,10 +3,21 @@ const get=async p=>{try{return await import(new URL(p,import.meta.url));}catch(e
 const {captureObservation}=await get('../runner/capture.js');const {executeInput}=await get('../runner/input.js');
 const {runReplay}=await get('../runner/replay.js');
 const {applyAnimationSpeed}=await get('../runner/speed.js');
-const {dismissCatalogueOverlay}=await get('../runner/session.js');
+const {dismissCatalogueOverlay,prepareCatalogue}=await get('../runner/session.js');
 const html=`<!doctype html><html><body style="margin:0"><div style="height:80px"></div><iframe src="/game" style="margin-left:120px;width:800px;height:500px;border:0"></iframe></body></html>`;
 const game=`<!doctype html><html><body style="margin:0;background:#eee"><h1>DEMO — fake credits</h1><button id="buy" style="margin:50px;width:180px;height:60px">Buy Bonus</button><div id="status">idle</div><script>window.clicks=0;document.querySelector('#buy').onclick=()=>{clicks++;document.querySelector('#status').textContent='purchase '+clicks;};</script></body></html>`;
 async function fixture(t){const server=createServer((req,res)=>{res.setHeader('content-type','text/html');res.end(req.url==='/game'?game:html);});await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({headless:true});t.after(async()=>{await browser.close();await new Promise(r=>server.close(r));});const page=await browser.newPage({viewport:{width:1280,height:720}});await page.goto('http://127.0.0.1:'+server.address().port);return {page,browser};}
+test('known late catalogue age links launch only the demo and journal both setup clicks',async t=>{
+ const {page}=await fixture(t),events=[];
+ await page.route('https://www.pragmaticplay.com/**',route=>route.fulfill({contentType:'text/html',body:`<a href="#" onclick="event.preventDefault();document.body.innerHTML='<button onclick=&quot;document.body.textContent=String(123)&quot;>Play Demo</button>'">Yes, I am 18 years or older</a>`}));
+ await page.goto('https://www.pragmaticplay.com/en/games/fixture/');
+ assert.equal(await prepareCatalogue(page,async e=>events.push(e)),true);assert.equal(await page.locator('body').innerText(),'123');assert.deepEqual(events.map(e=>e.label),['catalogue.adult-confirmation','catalogue.play-demo']);
+});
+test('capture can finish while a slow font outlasts the short control timeout',async t=>{
+ const {page}=await fixture(t);await page.route('https://fixture.invalid/font.woff2',async route=>{await new Promise(r=>setTimeout(r,600));await route.abort();});
+ await page.setContent('<style>@font-face{font-family:slow;src:url(https://fixture.invalid/font.woff2)}body{font-family:slow}</style><h1>Loading demo font</h1>',{waitUntil:'domcontentloaded'});page.setDefaultTimeout(100);
+ const result=await captureObservation(page);assert.ok(result.imageBytes.length>100);assert.equal(result.observation.geometry.imageWidth,960);
+});
 test('compressed capture maps iframe coordinates and records one checked click',async t=>{
  assert.equal(typeof captureObservation,'function');const {page}=await fixture(t);
  const shot=await captureObservation(page,{sessionId:'s'});assert.equal(shot.observation.geometry.imageWidth<=960,true);assert.ok(shot.imageBytes.length>0);assert.equal(shot.observation.geometry.clip.x,120);

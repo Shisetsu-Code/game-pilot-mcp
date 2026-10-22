@@ -12,6 +12,7 @@ export default {
   const origin=request.headers.get('origin');if(origin&&origin!==url.origin&&!(env.ALLOWED_ORIGINS||'').split(',').includes(origin))return json({error:'origin_rejected'},403);
   const pilot=makePilot(env);
   if(url.pathname==='/v1/launch'&&request.method==='POST')return json(await pilot.startLinkRun(await readJson(request,600000)));
+  if(url.pathname==='/v1/probe'&&request.method==='GET'){const runId=id(url.searchParams.get('runId')),object=await env.IMAGES.get('reports/'+runId+'/load-probe.json');return object?new Response(object.body||await object.arrayBuffer(),{headers:{'content-type':'application/json','cache-control':'no-store'}}):json({error:'not_found'},404);}
   if(url.pathname==='/mcp'){
    const transport=new WebStandardStreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true,maxRequestBodySize:100000});
    const server=createMcpServer({pilot,images:env.IMAGES});await server.connect(transport);try{return await transport.handleRequest(request);}finally{await server.close();}
@@ -20,6 +21,7 @@ export default {
   if(url.pathname==='/v1/image'&&request.method==='GET'){const key=url.searchParams.get('key');requireValue(/^[a-f0-9]{64}\.jpg$/.test(key),'invalid_image_key');const object=await env.IMAGES.get(key);return object?new Response(object.body||await object.arrayBuffer(),{headers:{'content-type':'image/jpeg','cache-control':'no-store'}}):json({error:'not_found'},404);}
   if(runner&&request.method==='POST'){
    const a=await readJson(request);const routes={
+    '/runner/report':async()=>{id(a.runId);await pilot.run(a.runId);requireValue(a.report?.runId===a.runId&&Array.isArray(a.report.games)&&a.report.games.length<=64,'invalid_report');await env.IMAGES.put('reports/'+a.runId+'/load-probe.json',JSON.stringify(a.report));return {ok:true};},
     '/runner/runs':()=>pilot.availableRuns(),'/runner/failure':()=>pilot.failSession(a.sessionId,a.leaseId,a.reason),'/runner/claim':()=>pilot.claimSession(a.runId,a.owner),'/runner/renew':()=>pilot.renew(a.sessionId,a.leaseId),'/runner/state':()=>pilot.runnerState(a.sessionId,a.leaseId),
     '/runner/observe':()=>pilot.captured(a.sessionId,a.leaseId,a.observation),'/runner/command':()=>pilot.command(a.sessionId,a.leaseId),'/runner/issued':()=>pilot.issued(a.sessionId,a.leaseId,a.commandId),
     '/runner/finish':()=>pilot.finish(a.sessionId,a.leaseId,a.commandId,a.result),'/runner/event':()=>pilot.runnerEvent(a.sessionId,a.leaseId,a.event),'/runner/ack':()=>pilot.acknowledge(a.sessionId,a.leaseId,a.ack,a.generation)

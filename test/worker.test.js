@@ -9,11 +9,15 @@ test('HTTP worker fails closed without secrets and isolates runner/client tokens
 test('remote launch API requires client credentials and persists one run across retries',async()=>{
  const sql=new DatabaseSync(':memory:');sql.exec('CREATE TABLE documents(key TEXT PRIMARY KEY,data TEXT NOT NULL,revision INTEGER NOT NULL DEFAULT 0)');
  const DB={prepare(query){const stmt=sql.prepare(query);let args=[];return {bind(...values){args=values;return this;},async first(){return stmt.get(...args)||null;},async all(){return {results:stmt.all(...args)};},async run(){return {meta:{changes:Number(stmt.run(...args).changes)}};}};}};
- const env={DB,MCP_TOKEN:'a'.repeat(40),RUNNER_TOKEN:'b'.repeat(40)};
+ const reports=new Map();const env={DB,IMAGES:{async put(k,v){reports.set(k,v);},async get(k){return reports.has(k)?{body:reports.get(k)}:null;}},MCP_TOKEN:'a'.repeat(40),RUNNER_TOKEN:'b'.repeat(40)};
  const body=JSON.stringify({id:'api-queue',demoConfirmed:true,urls:['https://example.com/demo']});
  const request=token=>new Request('https://pilot.test/v1/launch',{method:'POST',headers:{Authorization:'Bearer '+token,'content-type':'application/json'},body});
  try{assert.equal((await worker.fetch(request(env.RUNNER_TOKEN),env)).status,401);
  const first=await worker.fetch(request(env.MCP_TOKEN),env);assert.equal(first.status,200);const run=await first.json();
  const again=await (await worker.fetch(request(env.MCP_TOKEN),env)).json();assert.equal(again.id,run.id);assert.equal(run.sessions.length,1);
+ const saved=await worker.fetch(new Request('https://pilot.test/runner/report',{method:'POST',headers:{Authorization:'Bearer '+env.RUNNER_TOKEN,'content-type':'application/json'},body:JSON.stringify({runId:run.id,report:{runId:run.id,games:[]}})}),env);assert.equal(saved.status,200);
+ const privateUrl='https://pilot.test/v1/probe?runId='+run.id;
+ assert.equal((await worker.fetch(new Request(privateUrl),env)).status,401);
+ const report=await worker.fetch(new Request(privateUrl,{headers:{Authorization:'Bearer '+env.MCP_TOKEN}}),env);assert.equal((await report.json()).runId,run.id);
  }finally{sql.close();}
 });
