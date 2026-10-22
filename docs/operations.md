@@ -51,6 +51,14 @@ La alternativa local `.\Start-Remote-Game-Pilot.ps1` usa `data/remote.env`. La c
 
 ## Verificación después de publicar
 
+### WireGuard desde el lanzador
+
+El usuario activa WireGuard y selecciona un `.conf` en el formulario de links. El contenido viaja sólo al servidor loopback del lanzador y luego a GitHub Actions Secrets mediante `gh secret set` por stdin. Los archivos `queues/UUID.json` contienen únicamente la referencia `WG_CONFIG_<SHA256 del perfil normalizado>`, no las claves. Cada perfil distinto tiene su propia referencia: una subida posterior no modifica tandas en espera. Los secretos se conservan hasta que el propietario los elimine en Settings; respetar las tandas que todavía los necesitan.
+
+El workflow recibe `wireguard_secret`, valida nuevamente el perfil, instala WireGuard y resolvconf, abre `gpwg`, configura bloqueo de salida directa IPv4/IPv6 y exige ruta IPv4 por gpwg, handshake reciente y HTTPS funcional. La carga de la lista rechaza una referencia VPN distinta o ausente. No se inicia el supervisor si falla alguno de esos pasos. El túnel afecta al job completo, incluido MCP y las comunicaciones de Actions. La limpieza `always()` desconecta y retira archivos temporales después de detener los navegadores; una VM destruida también pierde esos archivos. No se configura WireGuard en la PC del usuario.
+
+Se aceptan perfiles estándar de cliente con una interfaz, un peer, DNS como IP y ruta IPv4 completa; no se admiten scripts de configuración ni extensiones de proveedores. No reutilizar simultáneamente este peer en otra máquina; emitir un perfil dedicado desde el servidor VPN. Los tests de Linux simulan el sistema y verifican orden del firewall y rechazo sin handshake; no prueban la conexión de un perfil real del usuario.
+
 `/health` debe responder `ok:true` y schemaVersion 1 con el esquema D1 instalado. Ejecutar `node scripts/verify-deployment.mjs` con las variables privadas `PILOT_URL` y `PILOT_MCP_TOKEN`. Ese script comprueba health, initialize y herramientas, sin iniciar juegos.
 
 Validar también OAuth en el cliente real y una demo individual. Después ampliar a ocho sesiones sólo para juegos que abran y se puedan controlar. No confundir una compilación o una CI verde con un despliegue probado.

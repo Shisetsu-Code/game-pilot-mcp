@@ -1,5 +1,7 @@
 # Implementation ledger
 
+WireGuard update 2026-10-22: implemented profile upload in the existing launcher. Standard single-peer full-tunnel configs are normalized/validated locally and again in Actions; script hooks and routing overrides are rejected. Config goes to an immutable content-addressed GitHub Actions Secret, while repository manifests contain only its reference. Queue import checks that the requested profile matches. VPN-enabled browser jobs require route/handshake/HTTPS verification, install IPv4/IPv6 egress guards, and clean up through an always step. 31 local tests passed with the Linux-only mock test skipped on Windows; the dedicated GitHub Linux job passed all five launcher/VPN tests, including the real shell script under mocked system commands: https://github.com/Shisetsu-Code/game-pilot-mcp/actions/runs/39843589780/job/120050858456. Shell syntax checks passed using Git Bash. The refreshed local UI displays the file selector. No real VPN profile has been provided or uploaded in this session, so a connection to the user's gateway is not claimed.
+
 Plan: ../game-pilot-mcp-plan.md. Specification approved; user authorized continuous implementation in this session.
 
 Ruling: new isolated repository under outputs/game-pilot-mcp on implementation branch; no worktree of an unrelated repository — avoids changing existing projects — no shared checkout baseline exists.

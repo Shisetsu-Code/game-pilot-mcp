@@ -6,3 +6,5 @@ data/
 artifacts/
 .superpowers/
 *.log
+# VPN client profiles contain private keys; the launcher publishes only Secrets.
+*.conf
