@@ -1,0 +1,110 @@
+{
+  "checkedAt": "2026-10-22T23:30:42.5862966Z",
+  "commit": "213914b65a5d7a8c2201d46409c65d8d86df3418",
+  "workflow": "https://github.com/Shisetsu-Code/game-pilot-mcp/actions/runs/39871908714",
+  "ci": "https://github.com/Shisetsu-Code/game-pilot-mcp/actions/runs/39871907399",
+  "fixture": {
+    "browserTestsPassed": 13,
+    "pages": 8,
+    "rafAndTimersContinued": true,
+    "initiallyUnfocusedGameFrames": 8,
+    "frames": 16
+  },
+  "live": [
+    {
+      "activity": {
+        "visibility": "visible",
+        "hidden": false,
+        "focused": true
+      },
+      "sessionId": "d721e05a-768c-463e-940a-6c52839b9b9a",
+      "observationId": "111c0ee3-89ac-4895-87f9-a912ef9e56bc",
+      "gameIndex": 1
+    },
+    {
+      "activity": {
+        "visibility": "visible",
+        "hidden": false,
+        "focused": true
+      },
+      "sessionId": "0b12c1fe-3716-4aa6-9d03-d8cee3d13545",
+      "observationId": "b6627124-ac6c-4a7b-a309-e75772935ab9",
+      "gameIndex": 2
+    },
+    {
+      "activity": {
+        "visibility": "visible",
+        "hidden": false,
+        "focused": true
+      },
+      "sessionId": "80500abe-9c20-44e6-8968-57d36ace1d8a",
+      "observationId": "9bc37f9a-17b5-4a50-926a-fa9415dfd39e",
+      "gameIndex": 3
+    },
+    {
+      "activity": {
+        "visibility": "visible",
+        "hidden": false,
+        "focused": true
+      },
+      "sessionId": "e72e551e-a71e-4373-8155-a331fb7228d9",
+      "observationId": "0d0374b4-ad87-4b88-a9d7-eb8f190c4d63",
+      "gameIndex": 4
+    },
+    {
+      "activity": {
+        "visibility": "visible",
+        "hidden": false,
+        "focused": true
+      },
+      "sessionId": "efd15440-66e4-4b5f-8755-d6a9e7134952",
+      "observationId": "4ce5313f-9f1d-45ed-8744-a83c8d967705",
+      "gameIndex": 6
+    },
+    {
+      "activity": {
+        "visibility": "visible",
+        "hidden": false,
+        "focused": true
+      },
+      "sessionId": "db2676e6-c86b-4888-b97c-50dbf87cb049",
+      "observationId": "fe18af83-b0d8-4b58-b978-5be93c1480c5",
+      "gameIndex": 7
+    },
+    {
+      "activity": {
+        "visibility": "visible",
+        "hidden": false,
+        "focused": true
+      },
+      "sessionId": "1987ccb7-b3f7-4455-9dac-db7412315431",
+      "observationId": "90bae855-074c-4789-8bd0-612b5c09ad9d",
+      "gameIndex": 8
+    },
+    {
+      "activity": {
+        "visibility": "visible",
+        "hidden": false,
+        "focused": true
+      },
+      "sessionId": "1dcfc5ea-add4-457a-8bed-317674f5507c",
+      "observationId": "1bc95cd4-e14a-4794-a1da-cb2d19b8f5c3",
+      "gameIndex": 0
+    },
+    {
+      "activity": {
+        "visibility": "visible",
+        "hidden": false,
+        "focused": false
+      },
+      "sessionId": "6d4473be-ce6d-4f1a-a524-a66c033499ab",
+      "observationId": "ebac89d3-1f9d-46fe-84ec-dc48a376883e",
+      "gameIndex": 5
+    }
+  ],
+  "limitations": [
+    "Fixture validates browser behavior; provider purchases are not completed by this check.",
+    "RubyPlay frame was visible but unfocused under an age/cookie modal; retest after entering the game.",
+    "No visibility getters or game handlers are replaced."
+  ]
+}
