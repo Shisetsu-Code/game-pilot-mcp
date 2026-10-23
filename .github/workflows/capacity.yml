@@ -2,6 +2,10 @@ name: Browser capacity benchmark
 on:
   workflow_dispatch:
     inputs:
+      slots:
+        description: Comma-separated browser counts (1 to 16)
+        default: '2,4,6,8'
+        required: true
       wait_ms:
         description: Simulated idle time between operations (0 to 5000 ms)
         default: '2000'
@@ -22,4 +26,5 @@ jobs:
       - run: npx playwright install --with-deps --only-shell chromium
       - run: node scripts/benchmark-capacity.mjs
         env:
+          PILOT_BENCH_SLOTS: ${{ inputs.slots }}
           PILOT_BENCH_WAIT_MS: ${{ inputs.wait_ms }}

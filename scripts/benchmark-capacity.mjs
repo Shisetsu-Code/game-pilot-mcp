@@ -5,7 +5,7 @@ import {performance} from 'node:perf_hooks';
 import {activeBrowserArgs,keepPageActive} from '../runner/activity.js';
 import {captureObservation} from '../runner/capture.js';
 const counts=(process.env.PILOT_BENCH_SLOTS||'2,4,6,8').split(',').map(Number);
-if(counts.some(n=>!Number.isInteger(n)||n<1||n>8))throw Error('invalid_benchmark_slots');
+if(counts.some(n=>!Number.isInteger(n)||n<1||n>16))throw Error('invalid_benchmark_slots');
 const quantile=(a,p)=>[...a].sort((x,y)=>x-y)[Math.min(a.length-1,Math.floor(a.length*p))];
 const waitMs=Number(process.env.PILOT_BENCH_WAIT_MS||0);if(!Number.isFinite(waitMs)||waitMs<0||waitMs>5000)throw Error('invalid_wait');
 const results=[];
