@@ -2,6 +2,18 @@
 
 ## Conexión
 
+### ChatGPT web
+
+1. Abrir [ChatGPT Plugins](https://chatgpt.com/plugins).
+2. Elegir **+ → Add custom MCP server**, nombre **Game Pilot** y URL **https://game-pilot-mcp.braian-n-l.workers.dev/mcp**.
+3. Seleccionar **OAuth**. El servidor admite registro dinámico de clientes (DCR) y documentos de metadatos de cliente (CIMD).
+4. Crear el plugin, instalarlo y conectar. La página de Game Pilot pide la clave privada guardada localmente en `data/connection-key.txt`; no es la contraseña de ChatGPT.
+5. En una conversación nueva, escribir **@**, seleccionar **Game Pilot** y pedir `list_runs` para comprobar el acceso.
+
+Los permisos del workspace pueden limitar la creación o instalación. Pasos contrastados con la [documentación oficial de conexión](https://developers.openai.com/api/docs/guides/custom-mcp-server#how-to-use); la interfaz puede cambiar. Esta conexión es la de ChatGPT, independiente de la configuración local de Codex.
+
+### Otros clientes y conexión técnica
+
 Local: importar `data/mcp-config.json` en un cliente que admita stdio. El puente usa `scripts/stdio.mjs` y el coordinador debe estar iniciado.
 
 Remoto: publicar `src/entry.js` en Cloudflare y conectar la URL HTTPS `/mcp` con OAuth. La autorización muestra nombre del cliente, destino y permisos; se ingresa la clave privada de conexión del proyecto, nunca la contraseña de ChatGPT o Cloudflare. Los ejecutores usan otra credencial independiente.

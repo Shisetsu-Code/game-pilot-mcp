@@ -48,7 +48,7 @@ Si ya tenés una copia, usá esa carpeta. Si falta la sesión, ejecutá `gh auth
 2. Pegá **un link HTTPS de demo por línea**, hasta 64 por tanda, y confirmá el uso de saldo ficticio.
 3. Elegí entre 1 y 300 minutos de ejecución. Dejá WireGuard desactivado para trabajar sin VPN.
 4. Pulsá **Enviar y ejecutar en GitHub**. El formulario guarda `queues/UUID.json` y devuelve un enlace a Actions.
-5. Conectá el agente al MCP de **Game Pilot**, autorizá esa conexión y pedile que procese la tanda mediante `list_runs`.
+5. Conectá el agente al MCP de **Game Pilot**, autorizá esa conexión y pedile que procese la tanda mediante `list_runs`. Para hacerlo desde ChatGPT web, seguí [estos pasos](docs/client.md#chatgpt-web).
 
 El formulario arranca navegadores; **no inicia por sí mismo la inferencia de un modelo**. Después del envío, podés cerrar el lanzador o apagar la PC: los juegos siguen en GitHub durante la ejecución. El agente que analiza capturas debe seguir activo para generar decisiones.
 
