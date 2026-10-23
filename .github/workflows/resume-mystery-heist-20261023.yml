@@ -1,0 +1,47 @@
+name: Resume Mystery Heist demo in Pilot 2
+on:
+  push:
+    branches:
+      - pilot/resume-mystery-heist-20261023
+    paths:
+      - .github/workflows/resume-mystery-heist-20261023.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilot-resume-mystery-heist-20261023
+  cancel-in-progress: false
+
+jobs:
+  game-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --only-shell chromium
+      - name: Verify Chromium dependencies
+        run: |
+          if ! node --input-type=module -e "import {chromium} from 'playwright'; const b=await chromium.launch({headless:true}); await b.close();"; then
+            npx playwright install-deps chromium
+          fi
+      - name: Resume one pending demo session
+        env:
+          PILOT_URL: https://game-pilot-mcp.braian-n-l.workers.dev
+          PILOT_RUNNER_TOKEN: ${{ secrets.PILOT_RUNNER_TOKEN }}
+          PILOT_RUN_ID: 66acbded-e107-499f-8985-16302c9d35db
+          PILOT_HEADLESS: 'true'
+          PILOT_GAMES_PER_WORKER: '1'
+          WORKER_INDEX: '0'
+        run: |
+          test -n "$PILOT_RUNNER_TOKEN"
+          set +e
+          timeout --signal=TERM --kill-after=20s 45m node runner/supervisor.mjs --worker 0
+          code=$?
+          if [ "$code" -eq 124 ]; then exit 0; fi
+          exit "$code"
