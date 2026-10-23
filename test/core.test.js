@@ -159,3 +159,23 @@ test('replay export retains original pre-input image, geometry and classified st
 test('menu pages merge option discoveries and cannot erase an unpurchased earlier option',async()=>{
  const {db,pilot,session}=await setup();await pilot.coverage(session.id,{options:[{id:'A',disabled:false,pageId:'one'}],menuExhausted:false});await pilot.coverage(session.id,{options:[{id:'B',disabled:false,pageId:'two'}],menuExhausted:true});await pilot.store.change('session:'+session.id,s=>{s.coverage.purchases.B='verified';s.coverage.normalSpins=3;});const graph=await pilot.graph(session.id);assert.equal(graph.coverage.options.length,2);assert.equal(graph.complete,false);assert.deepEqual(graph.coverage.options.find(o=>o.id==='A').pages,['one']);db.close();
 });
+
+test('capacity changes admit more games without replacing active sessions and preserve the four-owner limit',async()=>{
+ const db=dbFixture(),store=new Store(db);const games=Array.from({length:40},(_,i)=>({...game,id:'capacity-'+i}));const pilot=new Pilot(store,{games,allowFixture:true});
+ try{const run=await pilot.startRun({gameIds:games.map(g=>g.id)});const first=await pilot.claimSession(run.id,'worker-0');await pilot.claimSession(run.id,'worker-0');assert.equal(await pilot.claimSession(run.id,'worker-0'),null);
+ await pilot.capacity(run.id,8);
+ const claimed=await Promise.all(Array.from({length:10},()=>pilot.claimSession(run.id,'worker-0')));assert.equal(claimed.filter(Boolean).length,6);assert.equal((await pilot.session(first.id)).leaseId,first.leaseId);
+ for(let i=1;i<4;i++)assert.ok(await pilot.claimSession(run.id,'worker-'+i));assert.equal(await pilot.claimSession(run.id,'worker-4'),null);
+ await pilot.capacity(run.id,2);assert.equal(await pilot.claimSession(run.id,'worker-0'),null);assert.equal((await pilot.session(first.id)).phase,'loading');
+ await assert.rejects(()=>pilot.capacity(run.id,9),/invalid_worker_capacity/);
+ }finally{db.close();}
+});
+
+test('poll returns queued input and state together and withholds input while paused',async()=>{
+ const {db,pilot,session,run}=await setup();try{
+ await observe(pilot,session);const [o]=await pilot.getObservations(run.id,'r');await pilot.submitDecisions([{commandId:'poll-command',sessionId:session.id,observationId:o.observationId,revision:o.revision,leaseId:o.decisionLease,action:point,goal:'navigate',target:'menu',reason:'visible'}]);
+ const polled=await pilot.poll(session.id,session.leaseId);assert.equal(polled.state.phase,'queued');assert.equal(polled.command.commandId,'poll-command');
+ await pilot.control(run.id,'pause');assert.equal((await pilot.poll(session.id,session.leaseId)).command,null);
+ await assert.rejects(()=>pilot.poll(session.id,'wrong'),/session_lease_expired/);
+ }finally{db.close();}
+});

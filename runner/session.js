@@ -56,7 +56,7 @@ export async function runSession(browser,client,session,{signal,onState=()=>{}}=
    if(leaseError)throw leaseError;
    if(terminal()){await publish();throw Error('terminal_http_'+terminal());}
    if(Date.now()-lastHeartbeat>15000){await client.call('renew',base);lastHeartbeat=Date.now();}
-   const state=await client.call('state',base);
+   const {state,command}=await client.call('poll',base);
    if(state.controlGeneration!==lastControlGeneration){try{await client.call('ack',{...base,ack:state.runState,generation:state.controlGeneration});lastControlGeneration=state.controlGeneration;}catch(error){if(error.message==='stale_control_generation')continue;throw error;}}
    if(state.runState==='stopped')break;
    if(state.phase==='completed')break;
@@ -74,7 +74,6 @@ export async function runSession(browser,client,session,{signal,onState=()=>{}}=
    const requested=state.speed.requestedFactor;let factor=speed.nextFactor(idle);
    if(requested!==undefined){try{factor=speed.requestFactor(requested,idle);}catch{factor=speed.factor;}}
    if(factor!==appliedFactor||(appliedFactor>1&&count>0)){const changed=factor!==appliedFactor;const result=await applyAnimationSpeed(selected.frame,factor);speed.applied(factor,result.method);appliedFactor=factor;if(changed)await client.call('event',{...base,event:{type:'speed',...speed.status(),reason:speed.reason||'verified_rounds'}});}
-   const command=await client.call('command',base);
    if(!command){await sleep(200);continue;}
    if(!localObservation||command.observationId!==localObservation.observationId)throw Error('runner_observation_mismatch');
    try{

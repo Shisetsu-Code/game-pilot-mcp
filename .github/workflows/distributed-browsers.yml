@@ -4,7 +4,14 @@ on:
     inputs:
       queue_path:
         description: 'Lista demo publicada en queues/UUID.json'
+        required: false
+      existing_run_id:
+        description: 'Tanda existente: abre solo pendientes, conserva sesiones'
+        required: false
+      games_per_worker:
+        description: 'Juegos por worker (1 a 8)'
         required: true
+        default: '8'
       minutes:
         description: 'Duración máxima por worker'
         required: true
@@ -12,7 +19,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: distributed-games-${{ inputs.queue_path }}
+  group: distributed-games-${{ inputs.existing_run_id || inputs.queue_path }}
   cancel-in-progress: false
 jobs:
   prepare:
@@ -25,16 +32,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Validate duration
+      - name: Validate duration and slot count
         env:
           MINUTES: ${{ inputs.minutes }}
-        run: '[[ "$MINUTES" =~ ^[0-9]+$ ]] && (( 10#$MINUTES >= 1 && 10#$MINUTES <= 300 ))'
+          SLOTS: ${{ inputs.games_per_worker }}
+        run: '[[ "$MINUTES" =~ ^[0-9]+$ && "$SLOTS" =~ ^[1-8]$ ]] && (( 10#$MINUTES >= 1 && 10#$MINUTES <= 300 ))'
       - name: Load queue without VPN
+        if: ${{ inputs.existing_run_id == '' }}
         env:
           PILOT_QUEUE_PATH: ${{ inputs.queue_path }}
           PILOT_URL: https://game-pilot-mcp.braian-n-l.workers.dev
           PILOT_MCP_TOKEN: ${{ secrets.PILOT_MCP_TOKEN }}
         run: node scripts/load-queue.mjs
+      - run: npm ci
+      - name: Configure capacity without replacing existing sessions
+        env:
+          PILOT_URL: https://game-pilot-mcp.braian-n-l.workers.dev
+          PILOT_MCP_TOKEN: ${{ secrets.PILOT_MCP_TOKEN }}
+          PILOT_EXISTING_RUN_ID: ${{ inputs.existing_run_id }}
+          PILOT_GAMES_PER_WORKER: ${{ inputs.games_per_worker }}
+        run: node scripts/configure-capacity.mjs
       - id: result
         run: echo "run_id=$PILOT_RUN_ID" >> "$GITHUB_OUTPUT"
   browsers:
@@ -60,12 +77,13 @@ jobs:
           fi
       - name: Record worker resources
         run: node --input-type=module -e "import os from 'node:os'; console.log(JSON.stringify({host:os.hostname(),cpus:os.availableParallelism(),memoryGiB:Math.round(os.totalmem()/2**30)}))"
-      - name: Two isolated game browsers on this machine
+      - name: Concurrent isolated game browsers on this machine
         env:
           PILOT_URL: https://game-pilot-mcp.braian-n-l.workers.dev
           PILOT_RUNNER_TOKEN: ${{ secrets.PILOT_RUNNER_TOKEN }}
           PILOT_RUN_ID: ${{ needs.prepare.outputs.run_id }}
           PILOT_HEADLESS: 'true'
+          PILOT_GAMES_PER_WORKER: ${{ inputs.games_per_worker }}
           MINUTES: ${{ inputs.minutes }}
           WORKER_INDEX: ${{ matrix.worker }}
         run: |

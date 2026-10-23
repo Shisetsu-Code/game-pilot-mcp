@@ -27,14 +27,23 @@ export class Pilot{
  async session(sessionId){id(sessionId);const s=await this.store.read('session:'+sessionId);requireValue(s,'session_not_found');return s;}
  guard(s,leaseId){requireValue(s.leaseId===leaseId&&s.leaseUntil>this.clock(),'session_lease_expired');}
  async claimSession(runId,owner){id(owner);const run=await this.run(runId);if(run.state!=='running')return null;
-  // Owner is an authenticated supervisor slot. CAS on run enforces 4 slots x 2 games.
+  // CAS on the run enforces four owners and the configured per-owner capacity.
   const reservation=await this.store.change('run:'+runId,r=>{
    r.assignments??={};const entries=Object.values(r.assignments).filter(x=>!x.done);const owners=new Set(entries.map(x=>x.owner));
-   if(!owners.has(owner)&&owners.size>=4)return null;if(entries.filter(x=>x.owner===owner).length>=2)return null;
+   if(!owners.has(owner)&&owners.size>=4)return null;if(entries.filter(x=>x.owner===owner).length>=(r.gamesPerWorker??2))return null;
    const sid=r.sessions.find(x=>!r.assignments[x]);if(!sid)return null;const token=uuid();r.assignments[sid]={owner,token};return {sid,token};
   });if(!reservation)return null;
   return this.store.change('session:'+reservation.sid,s=>{if(s.phase!=='pending')return null;s.owner=owner;s.leaseId=reservation.token;s.leaseUntil=this.clock()+leaseMs;s.phase='loading';return structuredClone(s);});
  }
+ async capacity(runId,gamesPerWorker){
+  requireValue(Number.isInteger(gamesPerWorker)&&gamesPerWorker>=1&&gamesPerWorker<=8,'invalid_worker_capacity');
+  await this.run(runId);return this.store.change('run:'+id(runId),r=>{r.gamesPerWorker=gamesPerWorker;return {runId:r.id,workers:4,gamesPerWorker};});
+ }
+ async poll(sessionId,leaseId){
+  const s=await this.session(sessionId);this.guard(s,leaseId);const run=await this.run(s.runId);
+  return {state:this.stateView(s,run),command:run.state==='running'?Object.values(s.commands).find(c=>c.status==='queued')||null:null};
+ }
+ stateView(s,run){return {runState:run.state,controlGeneration:run.controlGeneration,phase:s.phase,captureRequested:s.captureRequested,speed:s.speed,observation:s.observation,replaySteps:s.replaySteps,verifiedRounds:Object.values(s.commands).filter(c=>['buy','spin'].includes(c.goal)&&c.status==='verified').length};}
  async renew(sessionId,leaseId){return this.store.change('session:'+id(sessionId),s=>{this.guard(s,leaseId);s.leaseUntil=this.clock()+leaseMs;return {leaseUntil:s.leaseUntil};});}
  async observe(sessionId,leaseId,raw,{automatic=false}={}){validateObservation(raw);return this.store.change('session:'+id(sessionId),s=>{
   this.guard(s,leaseId);const pending=Object.values(s.commands).some(c=>c.status==='queued'||c.status==='issued');if(pending||automatic&&s.observation?.decisionUntil>this.clock())return null;

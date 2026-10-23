@@ -7,6 +7,7 @@ import {captureObservation} from '../runner/capture.js';
 const counts=(process.env.PILOT_BENCH_SLOTS||'2,4,6,8').split(',').map(Number);
 if(counts.some(n=>!Number.isInteger(n)||n<1||n>8))throw Error('invalid_benchmark_slots');
 const quantile=(a,p)=>[...a].sort((x,y)=>x-y)[Math.min(a.length-1,Math.floor(a.length*p))];
+const waitMs=Number(process.env.PILOT_BENCH_WAIT_MS||0);if(!Number.isFinite(waitMs)||waitMs<0||waitMs>5000)throw Error('invalid_wait');
 const results=[];
 for(const slots of counts){
  const browsers=[],pages=[],captureMs=[],failures=[];const openedAt=performance.now();
@@ -19,6 +20,7 @@ for(const slots of counts){
   const startupMs=Math.round(performance.now()-openedAt);const starts=await Promise.all(pages.map(p=>p.evaluate(()=>framesDrawn)));
   const loopAt=performance.now();
   for(let round=0;round<5;round++)await Promise.all(pages.map(async(p,i)=>{
+   if(waitMs)await new Promise(r=>setTimeout(r,waitMs));
    const at=performance.now();try{await captureObservation(p);await p.getByRole('button',{name:'Inspect fixture'}).click({timeout:3000});captureMs.push(performance.now()-at);}catch(e){failures.push({page:i,error:e.message.split('\n')[0]});}
   }));
   const seconds=(performance.now()-loopAt)/1000;
@@ -29,7 +31,7 @@ for(const slots of counts){
  }finally{await Promise.all(browsers.map(b=>b.close()));}
 }
 const acceptable=results.filter(r=>r.acceptable);const best=acceptable.reduce((a,b)=>!a||b.operationsPerSecond>a.operationsPerSecond?b:a,null);
-const report={host:os.hostname(),cpus:os.availableParallelism(),memoryGiB:+(os.totalmem()/2**30).toFixed(2),method:'Independent Chromium per game, animated canvas fixtures, five compressed captures plus checked DOM clicks per slot; excludes provider network and remote coordinator. Capacity is provisional for real games.',results,recommendedSlots:best?.slots||2};
+const report={waitMs,host:os.hostname(),cpus:os.availableParallelism(),memoryGiB:+(os.totalmem()/2**30).toFixed(2),method:'Independent Chromium per game, animated canvas fixtures, five compressed captures plus checked DOM clicks per slot; excludes provider network and remote coordinator. Capacity is provisional for real games.',results,recommendedSlots:best?.slots||2};
 console.log('CAPACITY_RESULT '+JSON.stringify(report));
 await writeFile('capacity-results.json',JSON.stringify(report,null,2));
 if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,'## Browser capacity benchmark\n```json\n'+JSON.stringify(report,null,2)+'\n```\n');
