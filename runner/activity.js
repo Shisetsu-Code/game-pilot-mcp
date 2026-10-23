@@ -14,7 +14,7 @@ export async function keepPageActive(page) {
  const cdp = await page.context().newCDPSession(target);
  try {
   await cdp.send('Emulation.setFocusEmulationEnabled', {enabled:true});
-  await cdp.send('Page.setWebLifecycleState', {state:'active'});
+  if(target===page)await cdp.send('Page.setWebLifecycleState', {state:'active'});
  } catch (error) {
   await cdp.detach().catch(()=>{});
   throw new Error('page_activity_setup_failed: '+error.message);

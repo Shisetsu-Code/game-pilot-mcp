@@ -44,7 +44,7 @@ export class Pilot{
  async getObservations(runId,reviewerId,limit=8){id(reviewerId);requireValue(Number.isInteger(limit)&&limit>=1&&limit<=8,'invalid_batch_limit');const run=await this.run(runId);const out=[];
   const ordered=await Promise.all(run.sessions.map(sid=>this.session(sid)));ordered.sort((a,b)=>(a.lastReviewAt||0)-(b.lastReviewAt||0));
   for(const snapshot of ordered){const sid=snapshot.id;if(out.length>=limit)break;const o=await this.store.change('session:'+sid,s=>{
-   if(!s.observation||!['observed','waiting_decision','uncertain','blocked'].includes(s.phase)||s.observation.decisionUntil>this.clock())return null;
+   if(!s.observation||s.captureRequested||!['observed','waiting_decision','uncertain','blocked'].includes(s.phase)||s.observation.decisionUntil>this.clock())return null;
    s.observation.decisionLease=uuid();s.observation.decisionUntil=this.clock()+reviewMs;s.observation.reviewerId=reviewerId;s.lastReviewAt=this.clock();if(s.phase==='observed')s.phase='waiting_decision';return {...s.observation,phase:s.phase};
   });if(o)out.push(o);}return out;
  }

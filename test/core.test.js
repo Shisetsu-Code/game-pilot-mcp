@@ -48,6 +48,14 @@ test('automatic recapture never invalidates a reviewer lease or a queued input',
  assert.ok((await pilot.session(session.id)).captureRequested);
  }finally{db.close();}
 });
+test('a requested refresh cannot hand the reviewer its older screenshot',async()=>{
+ const {db,pilot,run,session}=await setup();try{
+  const raw=await observe(pilot,session);await pilot.requestObservation(session.id);
+  assert.deepEqual(await pilot.getObservations(run.id,'fresh-reviewer'),[]);
+  await pilot.captured(session.id,session.leaseId,{...raw,observationId:'fresh-after-load'});
+  const [fresh]=await pilot.getObservations(run.id,'fresh-reviewer');assert.equal(fresh.observationId,'fresh-after-load');
+ }finally{db.close();}
+});
 test('lease ownership excludes other workers and stale observations cannot execute',async()=>{
  assert.equal(typeof Pilot,'function');const {db,pilot,run,session}=await setup();
  assert.equal(await pilot.claimSession(run.id,'worker-1'),null);
