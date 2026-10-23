@@ -23,7 +23,12 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps --only-shell chromium
+      - run: npx playwright install --only-shell chromium
+      - name: Verify browser dependencies
+        run: |
+          if ! node --input-type=module -e "import {chromium} from 'playwright'; const b=await chromium.launch({headless:true}); await b.close();"; then
+            npx playwright install-deps chromium
+          fi
       - run: node scripts/benchmark-capacity.mjs
         env:
           PILOT_BENCH_SLOTS: ${{ inputs.slots }}

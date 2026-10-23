@@ -90,3 +90,9 @@ Las pruebas de navegador incluyen un sistema completo con cuatro procesos, ocho 
 ## Procedencia
 
 Proyecto independiente. Catálogos de [Hybrid-actions](https://github.com/Shisetsu-Code/Hybrid-actions) y referencia de diseño de [hybrid-cloud-fuzzer](https://github.com/Shisetsu-Code/hybrid-cloud-fuzzer). No se modifica su despliegue ni se comparten sus secretos o colas.
+
+## Capacidad ampliada sin VPN
+
+El lanzador sin VPN usa `distributed-browsers.yml`: cuatro máquinas de GitHub, hasta ocho navegadores independientes por máquina (32 juegos abiertos). El coordinador conserva el límite por owner con CAS; `set_worker_capacity` admite 1–8 y no reinicia sesiones. Los cupos sin trabajo no abren Chromium. Con menos de 1 GiB libre se demora la admisión de nuevos juegos, conservando los abiertos. Estado y comando llegan en una consulta `/runner/poll`. Las tandas con WireGuard mantienen el flujo protegido anterior.
+
+Medición GitHub (2 CPU, 7,75 GiB), con canvas animados y pausas de 2 segundos: 2/4/6/8 juegos produjeron 0,93/1,73/2,33/2,60 operaciones por segundo. Son pruebas sintéticas; la capacidad con proveedores reales depende de cada juego y de la red. Ver `docs/capacity-idle-evidence.json`.

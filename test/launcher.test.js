@@ -4,7 +4,7 @@ import {launcherServer,publishQueue} from '../scripts/launcher.mjs';
 test('launcher publishes a repo manifest then dispatches the matching queue without shell interpolation',async()=>{
  const calls=[],raw={id:'12345678-1234-1234-1234-123456789abc',demoConfirmed:true,minutes:30,urls:['https://example.com/demo?text=$(no)']};
  const result=await publishQueue(raw,{gh:async(args,input)=>{calls.push({args,input});return '';}});
- assert.equal(result.started,true);assert.equal(calls.length,2);
+ assert.equal(result.started,true);assert.equal(calls.length,2);assert.ok(calls[1].args.includes('distributed-browsers.yml'));assert.ok(calls[1].args.includes('games_per_worker=8'));
  const document=JSON.parse(Buffer.from(JSON.parse(calls[0].input).content,'base64'));
  assert.equal(document.urls[0],raw.urls[0]);assert.ok(calls[1].args.includes('queue_path=queues/'+raw.id+'.json'));
  await assert.rejects(publishQueue({...raw,minutes:'30; bad'}),/duración/);
