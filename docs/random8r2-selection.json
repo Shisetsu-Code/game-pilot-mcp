@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "id": "2b4c3fcf-dcac-4ee1-8a4b-3b9ab7af31c0",
+  "demoConfirmed": true,
+  "urls": [
+    "https://gs.1spin4win.com:10443/gmh5/games.html?game=MegaLucky576&currency=EUR&config=1&freeplay=true&language=en&exit=none"
+  ],
+  "source": {
+    "repository": "Shisetsu-Code/Hybrid-actions",
+    "commit": "1014816f2952a9019369ddde5c0ad55c40e33d78",
+    "path": "config/providers.json",
+    "selection": "crypto.randomInt, unused providers",
+    "replaces": [
+      {
+        "provider": "3oaks",
+        "reason": "Connection Lost after reload"
+      }
+    ],
+    "selected": [
+      {
+        "index": 0,
+        "providerName": "1Spin4Win",
+        "id": "1spin4win:mega-lucky-576",
+        "provider": "1spin4win",
+        "name": "mega-lucky-576",
+        "url": "https://gs.1spin4win.com:10443/gmh5/games.html?game=MegaLucky576&currency=EUR&config=1&freeplay=true&language=en&exit=none",
+        "symbol": "MegaLucky576",
+        "demo": false
+      }
+    ]
+  },
+  "runId": "72353479-f117-4f07-a025-819a345eab4d",
+  "execution": "https://github.com/Shisetsu-Code/game-pilot-mcp/actions/runs/39880900732"
+}

@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "id": "4cfbaaf5-376c-42ea-a43e-17bc6002baed",
+  "demoConfirmed": true,
+  "urls": [
+    "https://playin.com/embed/v1/demo/WarriorGraveyard",
+    "https://www.pragmaticplay.com/en/games/duel-of-night-day/"
+  ],
+  "source": {
+    "repository": "Shisetsu-Code/Hybrid-actions",
+    "commit": "1014816f2952a9019369ddde5c0ad55c40e33d78",
+    "path": "config/providers.json",
+    "selection": "crypto.randomInt, unused providers",
+    "replaces": [
+      {
+        "provider": "ka_gaming",
+        "reason": "terminal_http_403"
+      },
+      {
+        "provider": "belatra",
+        "reason": "terminal_http_403"
+      }
+    ],
+    "selected": [
+      {
+        "index": 0,
+        "providerName": "Nolimit City",
+        "id": "nolimit_city:warriorgraveyard",
+        "provider": "nolimit_city",
+        "name": "warriorgraveyard",
+        "url": "https://playin.com/embed/v1/demo/WarriorGraveyard",
+        "symbol": "WarriorGraveyard",
+        "demo": false
+      },
+      {
+        "index": 1,
+        "providerName": "Pragmatic Play",
+        "id": "pragmatic:duel-of-night-day",
+        "provider": "pragmatic",
+        "name": "duel-of-night-day",
+        "url": "https://www.pragmaticplay.com/en/games/duel-of-night-day/",
+        "symbol": "vswaysyinyang",
+        "demo": false
+      }
+    ]
+  },
+  "runId": "29679a96-95b0-41ae-84e5-1e6202853c8c",
+  "execution": "https://github.com/Shisetsu-Code/game-pilot-mcp/actions/runs/39879912858"
+}

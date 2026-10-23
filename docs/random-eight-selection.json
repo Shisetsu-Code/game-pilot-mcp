@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "id": "70564f85-35cb-4ce4-b9c7-5bf4457648c3",
+  "demoConfirmed": true,
+  "urls": [
+    "https://yggdrasilgaming.com/games/vikings-go-to-egypt-wild-fight/",
+    "https://3oaks.com/game/gold_nuggets",
+    "https://cachedownload.playtechone.com/ngmdesktop/casinoclient.html?game=gpas_trimer_pop&preferedmode=offline&real=0",
+    "https://demo.bgaming-network.com/play/JewelBoom/FUN",
+    "https://gamesdemo.kaga88.com/?g=Sweetopia&p=demo&u=66943510&t=123&ak=accessKey&cr=USD&loc=es&l=https%3A%2F%2Fwww.kaga88.com%2F",
+    "https://belatragames.com/es/games/game/big-wild-buffalo",
+    "https://rubyplay.com/games/mad-hit-gold/",
+    "https://www.playngo.com/games/banana-rush"
+  ],
+  "source": {
+    "repository": "Shisetsu-Code/Hybrid-actions",
+    "commit": "1014816f2952a9019369ddde5c0ad55c40e33d78",
+    "path": "config/providers.json",
+    "selection": "crypto.randomInt: shuffled nonempty providers, one uniform game per provider",
+    "selectedAt": "2026-10-23T00:40:30.147Z",
+    "selected": [
+      {
+        "index": 0,
+        "provider": "yggdrasil",
+        "providerName": "Yggdrasil",
+        "id": "yggdrasil:vikings-go-to-egypt-wild-fight",
+        "name": "vikings-go-to-egypt-wild-fight",
+        "url": "https://yggdrasilgaming.com/games/vikings-go-to-egypt-wild-fight/",
+        "symbol": "10516",
+        "demo": false
+      },
+      {
+        "index": 1,
+        "provider": "3oaks",
+        "providerName": "3 Oaks",
+        "id": "3oaks:gold_nuggets",
+        "name": "gold_nuggets",
+        "url": "https://3oaks.com/game/gold_nuggets",
+        "symbol": "gold_nuggets",
+        "demo": false
+      },
+      {
+        "index": 2,
+        "provider": "playtech",
+        "providerName": "Playtech",
+        "id": "playtech:game-gpas_trimer_pop",
+        "name": "game-gpas_trimer_pop",
+        "url": "https://cachedownload.playtechone.com/ngmdesktop/casinoclient.html?game=gpas_trimer_pop&preferedmode=offline&real=0",
+        "symbol": "gpas_trimer_pop",
+        "demo": false
+      },
+      {
+        "index": 3,
+        "provider": "bgaming",
+        "providerName": "BGaming",
+        "id": "bgaming:jewel-boom-super-drop",
+        "name": "jewel-boom-super-drop",
+        "url": "https://demo.bgaming-network.com/play/JewelBoom/FUN",
+        "symbol": "JewelBoom",
+        "demo": false
+      },
+      {
+        "index": 4,
+        "provider": "ka_gaming",
+        "providerName": "KA Gaming",
+        "id": "ka_gaming:sweetopia",
+        "name": "sweetopia",
+        "url": "https://gamesdemo.kaga88.com/?g=Sweetopia&p=demo&u=66943510&t=123&ak=accessKey&cr=USD&loc=es&l=https%3A%2F%2Fwww.kaga88.com%2F",
+        "symbol": "Sweetopia",
+        "demo": false
+      },
+      {
+        "index": 5,
+        "provider": "belatra",
+        "providerName": "Belatra",
+        "id": "belatra:big-wild-buffalo",
+        "name": "big-wild-buffalo",
+        "url": "https://belatragames.com/es/games/game/big-wild-buffalo",
+        "symbol": "32",
+        "demo": false
+      },
+      {
+        "index": 6,
+        "provider": "rubyplay",
+        "providerName": "RubyPlay",
+        "id": "rubyplay:mad-hit-gold",
+        "name": "mad-hit-gold",
+        "url": "https://rubyplay.com/games/mad-hit-gold/",
+        "symbol": "rp_215",
+        "demo": false
+      },
+      {
+        "index": 7,
+        "provider": "playngo",
+        "providerName": "Play’n GO",
+        "id": "playngo:1057",
+        "name": "1057",
+        "url": "https://www.playngo.com/games/banana-rush",
+        "demo": false
+      }
+    ]
+  },
+  "runId": "6ee5d8bf-dbba-463f-a79f-3c6d9aa35b6d",
+  "execution": "https://github.com/Shisetsu-Code/game-pilot-mcp/actions/runs/39879544494"
+}

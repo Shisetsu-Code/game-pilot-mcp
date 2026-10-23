@@ -61,3 +61,9 @@ test('partially clipped bordered iframe maps DOM center into the visible crop',a
  const {page}=await fixture(t);await page.locator('iframe').evaluate(el=>{el.style.marginLeft='-50px';el.style.border='5px solid black';});const shot=await captureObservation(page),c=shot.observation.controls.find(c=>c.label==='Buy Bonus');
  const actual=await page.frames()[1].locator('#buy').boundingBox();const mapped=shot.observation.geometry.clip.x+c.x*shot.observation.geometry.clip.width;assert.ok(Math.abs(mapped-(actual.x+actual.width/2))<1);assert.equal(shot.observation.geometry.clip.width,755);
 });
+
+test('a small animated target displacement is checked again and its actual click position is recorded',async t=>{
+ const {page}=await fixture(t);const shot=await captureObservation(page),control=shot.observation.controls.find(c=>c.label==='Buy Bonus');
+ const result=await executeInput(page,{commandId:'animated-target',action:{type:'click',x:control.x,y:control.y},target:'canvas-target',goal:'navigate'},shot.observation,{issued:async()=>{await page.frames()[1].locator('#buy').evaluate(el=>el.style.transform='translateY(-6px)');}},{sourceImage:shot.imageBytes});
+ assert.equal(result.status,'observed');assert.equal(await page.frames()[1].evaluate(()=>window.clicks),1);const box=await page.frames()[1].locator('#buy').boundingBox();assert.ok(Math.abs(result.position.y-(box.y+box.height/2))<=1);assert.equal(result.visualOffset.dy,-6);
+});
