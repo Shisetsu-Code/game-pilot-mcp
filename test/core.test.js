@@ -56,6 +56,13 @@ test('a requested refresh cannot hand the reviewer its older screenshot',async()
   const [fresh]=await pilot.getObservations(run.id,'fresh-reviewer');assert.equal(fresh.observationId,'fresh-after-load');
  }finally{db.close();}
 });
+test('targeted batches exclude unrelated sessions and reject sessions outside the run',async()=>{
+ const {db,pilot,run,session}=await setup();try{
+  await observe(pilot,session);const batch=await pilot.getObservations(run.id,'targeted',8,[session.id]);
+  assert.equal(batch.length,1);assert.equal(batch[0].sessionId,session.id);
+  await assert.rejects(pilot.getObservations(run.id,'targeted',8,['other-run-session']),/invalid_session_filter/);
+ }finally{db.close();}
+});
 test('lease ownership excludes other workers and stale observations cannot execute',async()=>{
  assert.equal(typeof Pilot,'function');const {db,pilot,run,session}=await setup();
  assert.equal(await pilot.claimSession(run.id,'worker-1'),null);

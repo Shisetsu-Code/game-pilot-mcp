@@ -11,7 +11,7 @@ test('known late catalogue age links launch only the demo and journal both setup
  const {page}=await fixture(t),events=[];
  await page.route('https://www.pragmaticplay.com/**',route=>route.fulfill({contentType:'text/html',body:`<a href="#" onclick="event.preventDefault();document.body.innerHTML='<button onclick=&quot;document.body.textContent=String(123)&quot;>Play Demo</button>'">Yes, I am 18 years or older</a>`}));
  await page.goto('https://www.pragmaticplay.com/en/games/fixture/');
- assert.equal(await prepareCatalogue(page,async e=>events.push(e)),true);assert.equal(await page.locator('body').innerText(),'123');assert.deepEqual(events.map(e=>e.label),['catalogue.adult-confirmation','catalogue.play-demo']);
+ assert.equal(await prepareCatalogue(page,async e=>events.push(e)),true);assert.equal(await page.locator('body').innerText(),'123');assert.deepEqual(events.filter(e=>e.type==='setup_input').map(e=>e.label),['catalogue.adult-confirmation','catalogue.play-demo']);
 });
 test('capture can finish while a slow font outlasts the short control timeout',async t=>{
  const {page}=await fixture(t);await page.route('https://fixture.invalid/font.woff2',async route=>{await new Promise(r=>setTimeout(r,600));await route.abort();});

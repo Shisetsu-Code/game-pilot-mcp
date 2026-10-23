@@ -1,0 +1,18 @@
+{
+  "measuredAtUtc": "2026-10-23T00:22:00Z",
+  "method": "Clock tool timestamps immediately before showing stored game screenshots and immediately after recording their visual classification. Includes tool and response overhead; one-second resolution. No browser input, network upload or new capture included. This is wall time, not internal model compute telemetry.",
+  "singleImageSeconds": [4, 3, 4],
+  "singleImageMedianSeconds": 4,
+  "batch": {"images": 3, "totalSeconds": 5},
+  "samples": [
+    {"game":"Dancing Monkeys","result":"bonus active, free spin 3/10, wait"},
+    {"game":"All Ways Egypt","result":"round active, stop visible, wait"},
+    {"game":"Adventures","result":"menu with three purchases, coordinates recorded"},
+    {"game":"1 of a Kind","result":"bet confirmation modal"},
+    {"game":"Rise of Ra","result":"catalogue, game not launched"},
+    {"game":"Tower Run","result":"catalogue, game not launched"}
+  ],
+  "limitations": ["Small sample; no independent accuracy scoring", "Stored screenshots, not current actionable observations", "Batch used different images; not a controlled serial/parallel speed comparison"],
+  "bootstrapFixtureRunsMs": [[214,194,194,199],[201,191,200,195]],
+  "bootstrapMethod": "Four provider-host intercepted pages in parallel; actual Playwright browser; reject cookies, confirm age, launch demo. No provider network or remote journal latency. Reproduced iframe early-return failure before fix."
+}

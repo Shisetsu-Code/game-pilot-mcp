@@ -41,8 +41,10 @@ export class Pilot{
   s.revision++;s.observation={...raw,sessionId:s.id,gameId:s.game.id,providerId:s.game.provider,revision:s.revision,capturedAt:this.clock(),decisionLease:null,decisionUntil:0};
   recordState(s,s.observation);if(s.phase!=='uncertain'&&s.phase!=='blocked')s.phase='observed';return s.observation;
  });}
- async getObservations(runId,reviewerId,limit=8){id(reviewerId);requireValue(Number.isInteger(limit)&&limit>=1&&limit<=8,'invalid_batch_limit');const run=await this.run(runId);const out=[];
-  const ordered=await Promise.all(run.sessions.map(sid=>this.session(sid)));ordered.sort((a,b)=>(a.lastReviewAt||0)-(b.lastReviewAt||0));
+ async getObservations(runId,reviewerId,limit=8,sessionIds=null){id(reviewerId);requireValue(Number.isInteger(limit)&&limit>=1&&limit<=8,'invalid_batch_limit');const run=await this.run(runId);const out=[];
+  if(sessionIds!==null)requireValue(Array.isArray(sessionIds)&&sessionIds.length>0&&sessionIds.length<=8&&sessionIds.every(sid=>run.sessions.includes(sid)),'invalid_session_filter');
+  const selected=sessionIds===null?run.sessions:run.sessions.filter(sid=>sessionIds.includes(sid));
+  const ordered=await Promise.all(selected.map(sid=>this.session(sid)));ordered.sort((a,b)=>(a.lastReviewAt||0)-(b.lastReviewAt||0));
   for(const snapshot of ordered){const sid=snapshot.id;if(out.length>=limit)break;const o=await this.store.change('session:'+sid,s=>{
    if(!s.observation||s.captureRequested||!['observed','waiting_decision','uncertain','blocked'].includes(s.phase)||s.observation.decisionUntil>this.clock())return null;
    s.observation.decisionLease=uuid();s.observation.decisionUntil=this.clock()+reviewMs;s.observation.reviewerId=reviewerId;s.lastReviewAt=this.clock();if(s.phase==='observed')s.phase='waiting_decision';return {...s.observation,phase:s.phase};
