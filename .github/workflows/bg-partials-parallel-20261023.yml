@@ -1,0 +1,51 @@
+name: BGaming partials - eight isolated demo browsers
+on:
+  push:
+    branches:
+      - pilot/bg-partials-parallel-20261023
+    paths:
+      - .github/workflows/bg-partials-parallel-20261023.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilot-bg-partials-parallel-20261023
+  cancel-in-progress: false
+
+jobs:
+  browsers:
+    strategy:
+      fail-fast: false
+      matrix:
+        worker: [0, 1, 2, 3]
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --only-shell chromium
+      - name: Verify browser dependencies
+        run: |
+          if ! node --input-type=module -e "import {chromium} from 'playwright'; const b=await chromium.launch({headless:true}); await b.close();"; then
+            npx playwright install-deps chromium
+          fi
+      - name: Two independent browsers in parallel
+        env:
+          PILOT_URL: https://game-pilot-mcp.braian-n-l.workers.dev
+          PILOT_RUNNER_TOKEN: ${{ secrets.PILOT_RUNNER_TOKEN }}
+          PILOT_RUN_ID: 9cd2aea3-d81b-46b4-9078-b174ebaa653e
+          PILOT_HEADLESS: 'true'
+          PILOT_GAMES_PER_WORKER: '2'
+          WORKER_INDEX: ${{ matrix.worker }}
+        run: |
+          test -n "$PILOT_RUNNER_TOKEN" && test -n "$PILOT_RUN_ID"
+          set +e
+          timeout --signal=TERM --kill-after=20s 60m node runner/supervisor.mjs --worker "$WORKER_INDEX"
+          code=$?
+          if [ "$code" -eq 124 ]; then exit 0; fi
+          exit "$code"
