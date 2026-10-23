@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "id": "9401369f-15b9-4d1c-873e-aac3f073c771",
+  "demoConfirmed": true,
+  "urls": [
+    "https://www.pragmaticplay.com/en/games/3-buzzing-wilds/",
+    "https://demo.bgaming-network.com/play/ThreeLuckyMonkeysHoldAndWin/FUN?server=demo",
+    "https://cachedownload.playtechone.com/ngmdesktop/casinoclient.html?game=gpas_1reeler_pop&preferedmode=offline&real=0",
+    "https://rubyplay.com/games/diamond-explosion-7s/",
+    "https://rubyplay.com/games/frankenstein-triple-volt/",
+    "https://amusnet.com/games/online-casino/rise-of-ra",
+    "https://www.playngo.com/games/tower-run-treasure-steps",
+    "https://belatragames.com/es/games/game/20-super-stars",
+    "https://yggdrasilgaming.com/games/3-gladiators-vs-caesar/",
+    "https://playin.com/embed/v1/demo/AirportSecurity",
+    "https://games.evolution.com/slots/10001-nights/",
+    "https://games.evolution.com/slots/10001-nights-megaways/"
+  ],
+  "source": {
+    "repository": "Shisetsu-Code/Hybrid-actions",
+    "commit": "1014816f2952a9019369ddde5c0ad55c40e33d78",
+    "path": "config/providers.json",
+    "linkedFrom": "Shisetsu-Code/hybrid-cloud-fuzzer",
+    "selected": [
+      {
+        "id": "pragmatic:3-buzzing-wilds",
+        "provider": "pragmatic",
+        "name": "3-buzzing-wilds",
+        "url": "https://www.pragmaticplay.com/en/games/3-buzzing-wilds/"
+      },
+      {
+        "id": "bgaming:3-lucky-monkeys-hold-win",
+        "provider": "bgaming",
+        "name": "3-lucky-monkeys-hold-win",
+        "url": "https://demo.bgaming-network.com/play/ThreeLuckyMonkeysHoldAndWin/FUN?server=demo"
+      },
+      {
+        "id": "playtech:game-gpas_1reeler_pop",
+        "provider": "playtech",
+        "name": "game-gpas_1reeler_pop",
+        "url": "https://cachedownload.playtechone.com/ngmdesktop/casinoclient.html?game=gpas_1reeler_pop&preferedmode=offline&real=0"
+      },
+      {
+        "id": "rubyplay:diamond-explosion-7s",
+        "provider": "rubyplay",
+        "name": "diamond-explosion-7s",
+        "url": "https://rubyplay.com/games/diamond-explosion-7s/"
+      },
+      {
+        "id": "rubyplay:frankenstein-triple-volt",
+        "provider": "rubyplay",
+        "name": "frankenstein-triple-volt",
+        "url": "https://rubyplay.com/games/frankenstein-triple-volt/"
+      },
+      {
+        "id": "amusnet:806",
+        "provider": "amusnet",
+        "name": "806",
+        "url": "https://amusnet.com/games/online-casino/rise-of-ra"
+      },
+      {
+        "id": "playngo:1098",
+        "provider": "playngo",
+        "name": "1098",
+        "url": "https://www.playngo.com/games/tower-run-treasure-steps"
+      },
+      {
+        "id": "belatra:20-super-stars",
+        "provider": "belatra",
+        "name": "20-super-stars",
+        "url": "https://belatragames.com/es/games/game/20-super-stars"
+      },
+      {
+        "id": "yggdrasil:3-gladiators-vs-caesar",
+        "provider": "yggdrasil",
+        "name": "3-gladiators-vs-caesar",
+        "url": "https://yggdrasilgaming.com/games/3-gladiators-vs-caesar/"
+      },
+      {
+        "id": "nolimit_city:airportsecurity",
+        "provider": "nolimit_city",
+        "name": "airportsecurity",
+        "url": "https://playin.com/embed/v1/demo/AirportSecurity"
+      },
+      {
+        "id": "redtiger:10001-nights",
+        "provider": "redtiger",
+        "name": "10001-nights",
+        "url": "https://games.evolution.com/slots/10001-nights/"
+      },
+      {
+        "id": "redtiger:10001-nights-megaways",
+        "provider": "redtiger",
+        "name": "10001-nights-megaways",
+        "url": "https://games.evolution.com/slots/10001-nights-megaways/"
+      }
+    ]
+  }
+}

@@ -1,0 +1,77 @@
+name: Distributed game exploration
+on:
+  workflow_dispatch:
+    inputs:
+      queue_path:
+        description: 'Lista demo publicada en queues/UUID.json'
+        required: true
+      minutes:
+        description: 'Duración máxima por worker'
+        required: true
+        default: '300'
+permissions:
+  contents: read
+concurrency:
+  group: distributed-games-${{ inputs.queue_path }}
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      run_id: ${{ steps.result.outputs.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate duration
+        env:
+          MINUTES: ${{ inputs.minutes }}
+        run: '[[ "$MINUTES" =~ ^[0-9]+$ ]] && (( 10#$MINUTES >= 1 && 10#$MINUTES <= 300 ))'
+      - name: Load queue without VPN
+        env:
+          PILOT_QUEUE_PATH: ${{ inputs.queue_path }}
+          PILOT_URL: https://game-pilot-mcp.braian-n-l.workers.dev
+          PILOT_MCP_TOKEN: ${{ secrets.PILOT_MCP_TOKEN }}
+        run: node scripts/load-queue.mjs
+      - id: result
+        run: echo "run_id=$PILOT_RUN_ID" >> "$GITHUB_OUTPUT"
+  browsers:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        worker: [0, 1, 2, 3]
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --only-shell chromium
+      - name: Verify browser dependencies
+        run: |
+          if ! node --input-type=module -e "import {chromium} from 'playwright'; const b=await chromium.launch({headless:true}); await b.close();"; then
+            npx playwright install-deps chromium
+          fi
+      - name: Record worker resources
+        run: node --input-type=module -e "import os from 'node:os'; console.log(JSON.stringify({host:os.hostname(),cpus:os.availableParallelism(),memoryGiB:Math.round(os.totalmem()/2**30)}))"
+      - name: Two isolated game browsers on this machine
+        env:
+          PILOT_URL: https://game-pilot-mcp.braian-n-l.workers.dev
+          PILOT_RUNNER_TOKEN: ${{ secrets.PILOT_RUNNER_TOKEN }}
+          PILOT_RUN_ID: ${{ needs.prepare.outputs.run_id }}
+          PILOT_HEADLESS: 'true'
+          MINUTES: ${{ inputs.minutes }}
+          WORKER_INDEX: ${{ matrix.worker }}
+        run: |
+          test -n "$PILOT_RUNNER_TOKEN" && test -n "$PILOT_RUN_ID"
+          set +e
+          timeout --signal=TERM --kill-after=20s "${MINUTES}m" node runner/supervisor.mjs --worker "$WORKER_INDEX"
+          result=$?
+          if [ "$result" -eq 124 ]; then exit 0; fi
+          exit "$result"
