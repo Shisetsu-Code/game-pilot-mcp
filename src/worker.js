@@ -1,12 +1,14 @@
 import {WebStandardStreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import {Store} from './store.js';import {Pilot} from './pilot.js';import {createMcpServer} from './mcp.js';import {validBearer} from './auth.js';import {requireValue,id} from './contracts.js';
 import catalog from '../config/providers.json' with {type:'json'};
+import {sharedImage} from './image-share.js';
 const json=(value,status=200)=>Response.json(value,{status,headers:{'cache-control':'no-store'}});
 async function readJson(request,max=100000){const reader=request.body?.getReader();requireValue(reader,'body_required');let size=0;const chunks=[];while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>max){await reader.cancel();throw Error('body_too_large');}chunks.push(value);}const bytes=new Uint8Array(size);let offset=0;for(const c of chunks){bytes.set(c,offset);offset+=c.length;}return JSON.parse(new TextDecoder().decode(bytes));}
 export function makePilot(env){return new Pilot(new Store(env.DB),{games:env.CATALOG?.games||catalog.games,allowFixture:env.ALLOW_FIXTURE===true});}
 export default {
  async fetch(request,env){try{
   const url=new URL(request.url);if(url.pathname==='/health'){if(!env.DB||!env.IMAGES)return json({ok:false,reason:'bindings_missing'},503);await env.DB.prepare('SELECT key FROM documents LIMIT 1').first();return json({ok:true,version:'0.1.0',schemaVersion:1,workers:4,gamesPerWorker:2});}
+  if(url.pathname==='/v1/shared-image')return sharedImage(request,env);
   const runner=url.pathname.startsWith('/runner/');if(!env.MCP_TOKEN||!env.RUNNER_TOKEN)return json({error:'authentication_not_configured'},503);
   if(!(env.OAUTH_AUTHENTICATED===true&&!runner)&&!(await validBearer(request,runner?env.RUNNER_TOKEN:env.MCP_TOKEN)))return json({error:'unauthorized'},401);
   const origin=request.headers.get('origin');if(origin&&origin!==url.origin&&!(env.ALLOWED_ORIGINS||'').split(',').includes(origin))return json({error:'origin_rejected'},403);
