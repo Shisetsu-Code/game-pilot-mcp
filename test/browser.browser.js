@@ -16,7 +16,7 @@ test('known late catalogue age links launch only the demo and journal both setup
 test('capture can finish while a slow font outlasts the short control timeout',async t=>{
  const {page}=await fixture(t);await page.route('https://fixture.invalid/font.woff2',async route=>{await new Promise(r=>setTimeout(r,600));await route.abort();});
  await page.setContent('<style>@font-face{font-family:slow;src:url(https://fixture.invalid/font.woff2)}body{font-family:slow}</style><h1>Loading demo font</h1>',{waitUntil:'domcontentloaded'});page.setDefaultTimeout(100);
- const result=await captureObservation(page);assert.ok(result.imageBytes.length>100);assert.equal(result.observation.geometry.imageWidth,960);
+ const result=await captureObservation(page);assert.ok(result.imageBytes.length>100);assert.equal(result.observation.geometry.imageWidth,768);
 });
 test('an intercepted catalogue control is journaled and leaves its screenshot available for visual review',async t=>{
  const {page}=await fixture(t),events=[];await page.setContent('<button>Reject All</button><div style="position:fixed;inset:0;background:#ddd">Confirm age first</div>');

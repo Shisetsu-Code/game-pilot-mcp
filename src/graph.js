@@ -15,4 +15,4 @@ export function transition(session,command,result){
   if(command.goal==='spin')session.coverage.normalSpins++;
  }
 }
-export function graphView(s){return {...s.graph,coverage:s.coverage,complete:s.coverage.menuExhausted===true&&s.coverage.normalSpins>=3&&s.coverage.options.every(x=>x.disabled||s.coverage.purchases[x.id]==='verified')&&s.phase!=='uncertain'};}
+export function graphView(s){return {...s.graph,coverage:s.coverage,complete:s.coverage.menuExhausted===true&&s.coverage.normalSpins>=(s.requiredNormalSpins??3)&&s.coverage.options.every(x=>x.disabled||s.coverage.purchases[x.id]==='verified')&&s.phase!=='uncertain'};}

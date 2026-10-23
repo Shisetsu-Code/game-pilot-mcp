@@ -1,16 +1,18 @@
 import {id,requireValue,validateDecision,validateObservation,publicDemoUrl} from './contracts.js';
 import {recordState,transition,graphView} from './graph.js';
 import {validateQueue} from './queue.js';
+import {routineAction,roundEvidence} from './routines.js';
 const uuid=()=>crypto.randomUUID();
 const leaseMs=60000,reviewMs=180000;
 export class Pilot{
  constructor(store,{games=[],allowFixture=false,clock=()=>Date.now()}={}){this.store=store;this.games=games;this.allowFixture=allowFixture;this.clock=clock;}
- async startRun({gameIds},approvedGames=this.games){
+ async startRun({gameIds,normalSpins=2},approvedGames=this.games){
+  requireValue(Number.isInteger(normalSpins)&&normalSpins>=1&&normalSpins<=100,'invalid_normal_spins');
   requireValue(Array.isArray(gameIds)&&gameIds.length>0&&gameIds.length<=64&&new Set(gameIds).size===gameIds.length,'select_1_to_64_unique_games');
   const games=await Promise.all(gameIds.map(async gameId=>{const g=approvedGames.find(x=>x.id===gameId),approval=await this.store.read('demo:'+gameId);requireValue(g&&(g.demo===true||approval),'unverified_demo');return {...g,demo:true,url:publicDemoUrl(g.url,{allowFixture:this.allowFixture})};}));
-  const run={id:uuid(),state:'preparing',controlGeneration:0,createdAt:this.clock(),sessions:[],workers:4,gamesPerWorker:2,normalSpins:3};
+  const run={id:uuid(),state:'preparing',controlGeneration:0,createdAt:this.clock(),sessions:[],workers:4,gamesPerWorker:2,normalSpins};
   await this.store.create('run:'+run.id,run);
-  for(const game of games){const s={id:uuid(),runId:run.id,game,phase:'pending',owner:null,leaseId:null,leaseUntil:0,revision:0,observation:null,commands:{},events:[],graph:{nodes:[],edges:[],frontier:[]},coverage:{purchases:{},normalSpins:0,menuExhausted:false,options:[]},speed:{factor:1},ack:null};await this.store.create('session:'+s.id,s);run.sessions.push(s.id);}
+  for(const game of games){const s={id:uuid(),runId:run.id,game,requiredNormalSpins:normalSpins,phase:'pending',owner:null,leaseId:null,leaseUntil:0,revision:0,observation:null,commands:{},events:[],graph:{nodes:[],edges:[],frontier:[]},coverage:{purchases:{},normalSpins:0,menuExhausted:false,options:[]},speed:{factor:1},ack:null};await this.store.create('session:'+s.id,s);run.sessions.push(s.id);}
   await this.store.change('run:'+run.id,r=>{Object.assign(r,run,{state:'running'});});return {...run,state:'running'};
  }
  async startLinkRun(raw){
@@ -43,20 +45,20 @@ export class Pilot{
   const s=await this.session(sessionId);this.guard(s,leaseId);const run=await this.run(s.runId);
   return {state:this.stateView(s,run),command:run.state==='running'?Object.values(s.commands).find(c=>c.status==='queued')||null:null};
  }
- stateView(s,run){return {runState:run.state,controlGeneration:run.controlGeneration,phase:s.phase,captureRequested:s.captureRequested,speed:s.speed,observation:s.observation,replaySteps:s.replaySteps,verifiedRounds:Object.values(s.commands).filter(c=>['buy','spin'].includes(c.goal)&&c.status==='verified').length};}
+ stateView(s,run){return {runState:run.state,controlGeneration:run.controlGeneration,phase:s.phase,captureRequested:s.captureRequested,speed:s.speed,observation:s.observation,replaySteps:s.replaySteps,pendingResults:Object.values(s.commands).filter(c=>c.status==='observed').map(c=>({commandId:c.commandId,goal:c.goal,target:c.target})),verifiedRounds:Object.values(s.commands).filter(c=>['buy','spin'].includes(c.goal)&&c.status==='verified').length};}
  async renew(sessionId,leaseId){return this.store.change('session:'+id(sessionId),s=>{this.guard(s,leaseId);s.leaseUntil=this.clock()+leaseMs;return {leaseUntil:s.leaseUntil};});}
  async observe(sessionId,leaseId,raw,{automatic=false}={}){validateObservation(raw);return this.store.change('session:'+id(sessionId),s=>{
   this.guard(s,leaseId);const pending=Object.values(s.commands).some(c=>c.status==='queued'||c.status==='issued');if(pending||automatic&&s.observation?.decisionUntil>this.clock())return null;
   s.revision++;s.observation={...raw,sessionId:s.id,gameId:s.game.id,providerId:s.game.provider,revision:s.revision,capturedAt:this.clock(),decisionLease:null,decisionUntil:0};
-  recordState(s,s.observation);if(s.phase!=='uncertain'&&s.phase!=='blocked')s.phase='observed';return s.observation;
+  recordState(s,s.observation);this.autoReview(s);if(s.phase!=='uncertain'&&s.phase!=='blocked')s.phase='observed';return s.observation;
  });}
  async getObservations(runId,reviewerId,limit=8,sessionIds=null){id(reviewerId);requireValue(Number.isInteger(limit)&&limit>=1&&limit<=8,'invalid_batch_limit');const run=await this.run(runId);const out=[];
   if(sessionIds!==null)requireValue(Array.isArray(sessionIds)&&sessionIds.length>0&&sessionIds.length<=8&&sessionIds.every(sid=>run.sessions.includes(sid)),'invalid_session_filter');
   const selected=sessionIds===null?run.sessions:run.sessions.filter(sid=>sessionIds.includes(sid));
   const ordered=await Promise.all(selected.map(sid=>this.session(sid)));ordered.sort((a,b)=>(a.lastReviewAt||0)-(b.lastReviewAt||0));
   for(const snapshot of ordered){const sid=snapshot.id;if(out.length>=limit)break;const o=await this.store.change('session:'+sid,s=>{
-   if(!s.observation||s.captureRequested||!['observed','waiting_decision','uncertain','blocked'].includes(s.phase)||s.observation.decisionUntil>this.clock())return null;
-   s.observation.decisionLease=uuid();s.observation.decisionUntil=this.clock()+reviewMs;s.observation.reviewerId=reviewerId;s.lastReviewAt=this.clock();if(s.phase==='observed')s.phase='waiting_decision';return {...s.observation,phase:s.phase};
+   if(!s.observation||s.captureRequested||s.readyAt>this.clock()||!['observed','waiting_decision','uncertain','blocked'].includes(s.phase)||s.observation.decisionUntil>this.clock())return null;
+   s.observation.decisionLease=uuid();s.observation.decisionUntil=this.clock()+reviewMs;s.observation.reviewerId=reviewerId;s.lastReviewAt=this.clock();if(s.phase==='observed')s.phase='waiting_decision';return {...s.observation,phase:s.phase,pendingResults:Object.values(s.commands).filter(c=>c.status==='observed').map(c=>({commandId:c.commandId,goal:c.goal,target:c.target,roundCommandId:c.roundCommandId}))};
   });if(o)out.push(o);}return out;
  }
  async submitDecisions(decisions){requireValue(Array.isArray(decisions)&&decisions.length<=8,'invalid_batch');const results=[];for(const raw of decisions){try{const d=validateDecision(raw),run=await this.run((await this.session(d.sessionId)).runId);requireValue(run.state==='running','run_not_running');
@@ -82,7 +84,9 @@ export class Pilot{
  async finish(sessionId,leaseId,commandId,result){requireValue(['observed','verified','uncertain','blocked'].includes(result.status),'invalid_result');return this.store.change('session:'+id(sessionId),s=>{
   this.guard(s,leaseId);const c=s.commands[commandId];requireValue(c,'command_not_found');if(c.status!=='issued')return {ok:false,code:'command_not_issued'};
   c.status=result.status;c.result=result;c.finishedAt=this.clock();if(result.observation){validateObservation(result.observation);s.revision++;s.observation={...result.observation,sessionId:s.id,gameId:s.game.id,providerId:s.game.provider,revision:s.revision,capturedAt:this.clock(),decisionUntil:0};recordState(s,s.observation);result.observation=structuredClone(s.observation);}
-  transition(s,c,result);s.phase=['verified','observed'].includes(result.status)||result.notExecuted===true?'observed':result.status;s.events.push({type:'action',...c});return {ok:true};
+  transition(s,c,result);s.phase=['verified','observed'].includes(result.status)||result.notExecuted===true?'observed':result.status;
+  if(result.autoWait&&result.status==='observed'&&['buy','spin'].includes(c.goal)&&(result.observation?.state.screen==='unclassified'||result.observation?.state.roundPhase!=='idle'))s.readyAt=this.clock()+10000;
+  this.autoReview(s);s.events.push({type:'action',...c});return {ok:true};
  });}
  async recover(now=this.clock(),runId=null){const snapshots=runId?await Promise.all((await this.run(runId)).sessions.map(sid=>this.session(sid))):await this.store.list('session:');for(const s0 of snapshots)if(s0.leaseUntil&&s0.leaseUntil<=now){const token=await this.store.change('session:'+s0.id,s=>{
   if(s.leaseUntil>now||s.recoveredLease===s.leaseId)return null;
@@ -108,8 +112,50 @@ export class Pilot{
  async reconcile(a){return this.store.change('session:'+id(a.sessionId),s=>{this.checkReview(s,a);const c=s.commands[a.commandId];requireValue(c&&['uncertain','blocked'].includes(c.status),'no_uncertain_result');requireValue(['verified','blocked'].includes(a.status)&&a.reason.length<=1000,'invalid_reconciliation');c.status=a.status;c.review={...a,at:this.clock()};if(a.status==='verified'){if(c.goal==='buy')s.coverage.purchases[c.target]='verified';if(c.goal==='spin')s.coverage.normalSpins++;}s.events.push({type:'reconciliation',...a,at:this.clock()});s.phase='observed';return {ok:true};});}
  async startReplay(sourceRunId){const bundle=await this.exportReplay(sourceRunId);const replay=await this.startRun({gameIds:bundle.sessions.map(s=>s.game.id)},bundle.sessions.map(s=>s.game));for(let i=0;i<bundle.sessions.length;i++){const source=bundle.sessions[i];await this.store.change('session:'+replay.sessions[i],s=>{s.replaySteps=Object.values(source.commands).filter(c=>c.status==='verified').sort((a,b)=>a.queuedAt-b.queuedAt).map(c=>({...c,beforeState:source.graph.nodes.find(n=>n.id===c.nodeId)?.state}));s.replaySource=sourceRunId;});}return replay;}
  async complete(sessionId){const s=await this.session(sessionId);requireValue(graphView(s).complete,'coverage_incomplete');await this.store.change('session:'+s.id,x=>{requireValue(!Object.values(x.commands).some(c=>['queued','issued','observed'].includes(c.status)),'command_pending');x.phase='completed';});await this.store.change('run:'+s.runId,r=>{if(r.assignments?.[s.id])r.assignments[s.id].done=true;});return {ok:true};}
- async runnerState(sessionId,leaseId){const s=await this.session(sessionId);this.guard(s,leaseId);const run=await this.run(s.runId);return {runState:run.state,controlGeneration:run.controlGeneration,phase:s.phase,captureRequested:s.captureRequested,speed:s.speed,observation:s.observation,replaySteps:s.replaySteps,verifiedRounds:Object.values(s.commands).filter(c=>['buy','spin'].includes(c.goal)&&c.status==='verified').length};}
+ async runnerState(sessionId,leaseId){const s=await this.session(sessionId);this.guard(s,leaseId);const run=await this.run(s.runId);return this.stateView(s,run);}
  async captured(sessionId,leaseId,raw,{automatic=false}={}){const result=await this.observe(sessionId,leaseId,raw,{automatic});if(result&&!automatic)await this.store.change('session:'+sessionId,s=>{this.guard(s,leaseId);s.captureRequested=null;});return result;}
+ async queueRoutine(sessionId,leaseId,raw){
+  validateObservation(raw);const initial=await this.session(sessionId),run=await this.run(initial.runId);
+  if(run.state!=='running')return {ok:false,code:'run_not_running'};
+  return this.store.change('session:'+id(sessionId),s=>{
+   this.guard(s,leaseId);
+   if(['uncertain','blocked','completed'].includes(s.phase)||s.observation?.decisionUntil>this.clock()||Object.values(s.commands).some(c=>['queued','issued'].includes(c.status)))return {ok:false,code:'session_busy'};
+   const routine=routineAction(raw);if(!routine)return {ok:false,code:'unknown_routine'};
+   const pending=Object.values(s.commands).filter(c=>c.status==='observed');
+   if(pending.some(c=>!['buy','spin'].includes(c.goal))||pending.length>1)return {ok:false,code:'review_required'};
+   s.revision++;s.observation={...raw,sessionId:s.id,revision:s.revision,capturedAt:this.clock(),decisionUntil:0,state:{...raw.state,screen:'prize',roundPhase:'active'}};recordState(s,s.observation);
+   const c=routine.control,commandId='auto-'+uuid();
+   const decision={commandId,sessionId:s.id,observationId:raw.observationId,revision:s.revision,action:{type:'click',x:c.x,y:c.y},goal:'continue',target:c.label,reason:'Recognized DOM prize dismissal',roundCommandId:pending[0]?.commandId};
+   s.commands[commandId]={...decision,decision,automatic:true,sourceObservation:structuredClone(s.observation),nodeId:s.currentNode,status:'queued',queuedAt:this.clock()};s.phase='queued';s.readyAt=0;
+   s.events.push({type:'routine_queued',kind:routine.kind,commandId,observationId:raw.observationId,action:decision.action,at:this.clock()});return {ok:true,observation:s.observation,commandId};
+  });
+ }
+ autoReview(s){
+  const o=s.observation;if(!o||['uncertain','blocked'].includes(s.phase))return;
+  const evidence=roundEvidence(o);
+  const verify=c=>{c.status='verified';c.review={automatic:true,observationId:o.observationId,reason:'Fresh visible DOM state confirms completed transition',at:this.clock()};const edge=s.graph.edges.find(e=>e.commandId===c.commandId);if(edge)edge.status='verified';if(c.goal==='spin')s.coverage.normalSpins++;if(c.goal==='buy')s.coverage.purchases[c.target]='verified';s.events.push({type:'automatic_review',commandId:c.commandId,...c.review});};
+  for(const c of Object.values(s.commands).filter(c=>c.status==='observed')){
+   if(['buy','spin'].includes(c.goal)&&evidence==='active')c.activeObserved=true;
+   if(c.goal==='spin'&&c.activeObserved&&evidence==='idle'){verify(c);s.readyAt=0;}
+   if(c.automatic&&c.goal==='continue'&&evidence==='idle'&&!o.controls.some(x=>x.label===c.target&&!x.disabled)){
+    verify(c);const round=s.commands[c.roundCommandId];
+    if(round?.status==='observed'&&['buy','spin'].includes(round.goal)&&!routineAction(round.sourceObservation)){verify(round);s.readyAt=0;}
+   }
+  }
+ }
+ async advanceBatch(items){
+  requireValue(Array.isArray(items)&&items.length<=8&&new Set(items.map(x=>x.sessionId)).size===items.length,'invalid_batch');
+  return Promise.all(items.map(async a=>{try{
+   requireValue(a.reviews===undefined||Array.isArray(a.reviews)&&a.reviews.length<=16,'invalid_reviews');
+   const auth={sessionId:a.sessionId,observationId:a.observationId,leaseId:a.leaseId};
+   if(a.state){const [r]=await this.annotate([{...auth,state:a.state}]);requireValue(r.ok,r.code);}
+   for(const review of a.reviews||[]){const [r]=await this.reviewResults([{...review,...auth}]);requireValue(r.ok,r.code);}
+   if(a.decision){const [r]=await this.submitDecisions([{...a.decision,...auth,revision:a.revision}]);return {...r,sessionId:a.sessionId};}
+   // Yield animation waits back to the worker instead of holding a three-minute lease.
+   await this.store.change('session:'+id(a.sessionId),s=>{this.checkReview(s,auth);s.observation.decisionUntil=0;s.readyAt=this.clock()+10000;if(!['uncertain','blocked'].includes(s.phase))s.phase='observed';});
+   return {ok:true,sessionId:a.sessionId,waiting:true};
+  }catch(e){return {ok:false,sessionId:a.sessionId,code:e.message};}}));
+ }
  async approveDemo(gameId,evidence){id(gameId);const game=this.games.find(x=>x.id===gameId);requireValue(game,'game_not_found');requireValue(typeof evidence==='string'&&evidence.length>=10&&evidence.length<=1000,'demo_evidence_required');publicDemoUrl(game.url,{allowFixture:this.allowFixture});await this.store.create('demo:'+gameId,{gameId,evidence,approvedAt:this.clock()});return {ok:true,gameId,scope:'catalogue_launch_and_fictitious_demo_only'};}
  async availableRuns(){return (await this.store.list('run:')).filter(r=>r.state==='running').map(r=>({id:r.id,createdAt:r.createdAt}));}
  async failSession(sessionId,leaseId,reason){const s=await this.session(sessionId);await this.store.change('session:'+id(sessionId),x=>{this.guard(x,leaseId);for(const c of Object.values(x.commands))if(['queued','issued'].includes(c.status))c.status=c.status==='issued'?'uncertain':'blocked';x.phase=Object.values(x.commands).some(c=>c.status==='uncertain')?'uncertain':'blocked';x.events.push({type:'failure',reason:String(reason).slice(0,300),at:this.clock()});x.leaseUntil=this.clock();});await this.store.change('run:'+s.runId,r=>{if(r.assignments?.[s.id])r.assignments[s.id].done=true;});return {ok:true};}

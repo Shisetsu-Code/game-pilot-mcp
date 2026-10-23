@@ -8,7 +8,7 @@ Es un proyecto independiente de Hybrid Cloud Fuzzer y Cloud-Fuzzer. Tiene su pro
 
 ## Qué queremos conseguir
 
-Enviar una lista de juegos y completar las compras disponibles de cada uno: free spins, bonus buy, antebet o equivalentes, además de tres tiradas normales. Dentro de un bonus hay que continuar, iniciar sus tiradas o elegir elementos cuando haga falta, hasta verificar su resultado final.
+Enviar una lista de juegos y completar las compras disponibles de cada uno: free spins, bonus buy, antebet o equivalentes, además de dos tiradas normales en tandas nuevas. Dentro de un bonus hay que continuar, iniciar sus tiradas o elegir elementos cuando haga falta, hasta verificar su resultado final.
 
 Queremos hacerlo en paralelo, con pocas esperas, imágenes comprimidas y aceleración compatible. Cada juego debe conservar un grafo BFS de caminos y un registro de capturas, coordenadas, clicks y resultados para revisar y repetir el recorrido. Si un proveedor presenta errores reales, se omite y se continúa con otros.
 
@@ -56,7 +56,7 @@ Si la lista se guardó pero Actions no arrancó, usá la ruta `queues/UUID.json`
 
 ### Instrucción de ejemplo para el agente
 
-> Usá exclusivamente Game Pilot MCP. Localizá mi tanda con list_runs. Navegá los juegos en paralelo y pasá sus capturas a los clasificadores. Hacé las compras visibles con saldo ficticio, completá cada bonus y tres tiradas normales. Entre rondas esperá inicialmente diez segundos y pedí una captura nueva. Usá Turbo nativo o aceleración efectiva comprobada cuando sea compatible. Guardá acciones y resultados. Si un proveedor da un error real, omitilo y seguí con otros. No repitas una compra de resultado incierto.
+> Usá exclusivamente Game Pilot MCP. Localizá mi tanda con list_runs. Navegá los juegos en paralelo y pasá sus capturas a los clasificadores. Hacé las compras visibles con saldo ficticio, completá cada bonus y dos tiradas normales en tandas nuevas. Entre rondas esperá inicialmente diez segundos y pedí una captura nueva. Usá Turbo nativo o aceleración efectiva comprobada cuando sea compatible. Guardá acciones y resultados. Si un proveedor da un error real, omitilo y seguí con otros. No repitas una compra de resultado incierto.
 
 Ver [el ciclo de navegación y clasificación](docs/vision-loop.md) y [los contratos MCP](docs/client.md).
 
@@ -78,7 +78,7 @@ La cola admite 64 links; no se abren todos a la vez. La admisión puede esperar 
 | --- | --- |
 | Lanzador, listas privadas y navegadores en GitHub | Implementado |
 | MCP con OAuth, coordinación en Cloudflare y credenciales separadas | Implementado; cada cliente debe conectarse y autorizarse |
-| Capturas JPEG por lotes, hasta 8 por llamada | Implementado; perfil habitual de calidad 45 y ancho máximo 960 |
+| Capturas JPEG por lotes, hasta 8 por llamada | Implementado; perfil habitual de calidad 35 y ancho máximo 768 |
 | Mouse, scroll, arrastre y teclas permitidas | Implementado, con comprobaciones de geometría y objetivo |
 | BFS por juego, cobertura y exportaciones | Implementado; depende de lo que el agente realmente recorra y verifique |
 | Compras y bonus de cualquier proveedor | **Parcial**; todavía hay bloqueos, adaptaciones pendientes y resultados inciertos |
@@ -87,7 +87,7 @@ La cola admite 64 links; no se abren todos a la vez. La admisión puede esperar 
 | WireGuard desde el formulario | Implementado para perfiles compatibles; requiere servidor y perfil real. No hay servidor del usuario configurado |
 | Inferencia autónoma permanente por API | Pendiente; este repositorio no la inicia ni la financia |
 
-Una compra pulsada no equivale a un bonus terminado. `complete_game` comprueba las opciones registradas y tres tiradas verificadas; no descubre compras que el agente nunca vio. Las pruebas de infraestructura no certifican todo el catálogo.
+Una compra pulsada no equivale a un bonus terminado. `complete_game` comprueba las opciones registradas y el objetivo de tiradas verificadas de la tanda (dos por defecto en tandas nuevas); no descubre compras que el agente nunca vio. Las pruebas de infraestructura no certifican todo el catálogo.
 
 ## Esperas, velocidad y errores
 
@@ -134,3 +134,7 @@ npm run test:browser
 ```
 
 GitHub Actions consume minutos y Cloudflare consume sus recursos según el uso. El código actual no incorpora inferencia autónoma por API de OpenAI; una futura integración necesitaría su propia configuración y presupuesto. No subir `.env`, `data`, perfiles VPN ni claves al repositorio.
+
+## Ciclo rápido
+
+Ver [Ciclo rápido de Pilot 2](docs/fast-loop.md): get_observations → dvance_batch, esperas locales, cierre de premios DOM y aceleración compatible. El runner nuevo se carga al iniciar el job; las partidas en curso no se reinician para actualizar.
