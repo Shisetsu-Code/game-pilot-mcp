@@ -34,6 +34,10 @@ Goals: `buy`, `spin`, `navigate`, `continue`, `pick`, `inspect`. Inputs: `click`
 
 ## Ciclo del revisor
 
+El flujo con un agente navegador y clasificadores separados se describe en [Navegación y clasificación](vision-loop.md). El clasificador devuelve evidencia visual; el navegador decide y ejecuta. No usar colas de Hybrid Fuzzer 2 para esta tarea.
+
+Después de una ronda, esperar inicialmente diez segundos y entonces pedir `request_observation`. La observación inmediata del input puede mostrar el inicio de la animación: esperar sin pedir otra imagen no la vuelve reciente. Si la reserva de revisión venció, obtener otra válida antes de actuar. Diez segundos no garantizan que un bonus haya terminado.
+
 Analizar las pantallas juntas. Para cada una identificar estado, opciones visibles, página del menú y si la ronda está activa. Enviar `annotate_observations` por lote. No usar `idle` si sólo se sabe que no hubo una excepción.
 
 Después de una acción, el resultado queda `observed`. Una compra se confirma con `review_results` sólo tras verificar la secuencia y el estado resultante. Si el bonus sigue activo, solicitar otra imagen: no emitir otra compra o tirada. Si requiere pulsar Continuar o elegir un elemento, enviar `goal: continue|pick` y `roundCommandId` con el identificador de la compra/tirada pendiente. Cada paso usa una observación nueva y revisada; la compra original permanece pendiente hasta terminar el bonus. Un resultado incierto exige reconciliación y nunca un retry del mismo clic.

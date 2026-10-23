@@ -1,47 +1,122 @@
 # Game Pilot MCP
 
-MCP para explorar demos con saldo ficticio: **4 procesos Chromium × 2 juegos**, imágenes JPEG comprimidas por lotes, decisiones independientes, BFS persistente y exportación de recorridos.
+Game Pilot permite que un agente navegue juegos demo, haga compras de funciones con saldo ficticio, complete sus bonus y registre cómo lo hizo. **Los juegos corren en GitHub Actions**; **Cloudflare** coordina las sesiones y guarda capturas, acciones y resultados. El lanzador de la PC sirve para enviar los links.
 
-Fuente publicada en el repositorio privado [Shisetsu-Code/game-pilot-mcp](https://github.com/Shisetsu-Code/game-pilot-mcp). Verificación: 24 pruebas de núcleo/OAuth y nueve de navegador. MCP desplegado: **https://game-pilot-mcp.braian-n-l.workers.dev/mcp**. [Comprobación remota](docs/deployment-evidence.json): autorización OAuth/PKCE, 21 herramientas e imágenes privadas verificadas. La conexión desde la cuenta de ChatGPT aún requiere añadir este MCP.
+Repositorio: [Shisetsu-Code/game-pilot-mcp](https://github.com/Shisetsu-Code/game-pilot-mcp). Servidor MCP: **https://game-pilot-mcp.braian-n-l.workers.dev/mcp**.
 
-Los navegadores pueden ejecutarse enteramente en GitHub: abrir [Cloud game browsers](https://github.com/Shisetsu-Code/game-pilot-mcp/actions/workflows/browsers.yml), pulsar **Run workflow** y elegir una duración (30 minutos por defecto, máximo 300). Dejar `run_id` vacío para esperar tandas nuevas creadas desde MCP. Arranca cuatro procesos con dos juegos cada uno en un runner de GitHub; la PC del usuario puede estar apagada. El secreto de ejecutor está configurado como GitHub Actions secret. Cloudflare coordina y guarda el historial. Se puede detener desde **Cancel workflow**; no hay reinicio automático ni servicio permanente. Consume minutos de GitHub Actions.
+Es un proyecto independiente de Hybrid Cloud Fuzzer y Cloud-Fuzzer. Tiene su propio MCP, colas, almacenamiento y credenciales. Los clasificadores deben trabajar con capturas de **Game Pilot**, sin consumir las colas de los otros fuzzers.
 
-En la autorización de ChatGPT usar la clave privada de `data/connection-key.txt`; no compartirla ni subirla a GitHub. Los iniciadores PowerShell son una alternativa local opcional.
+## Qué queremos conseguir
 
-## Qué está implementado
+Enviar una lista de juegos y completar las compras disponibles de cada uno: free spins, bonus buy, antebet o equivalentes, además de tres tiradas normales. Dentro de un bonus hay que continuar, iniciar sus tiradas o elegir elementos cuando haga falta, hasta verificar su resultado final.
 
-- MCP oficial con Streamable HTTP, puente stdio y OAuth 2.1 mediante la biblioteca de Cloudflare.
-- Lotes de hasta ocho capturas, JPEG calidad 45 y ancho máximo 960. Las sesiones listas no esperan al juego más lento. El lote sale inmediatamente; no añade la ventana opcional de 300 ms.
-- Inputs de mouse, arrastre, scroll y teclas permitidas; coordenadas normalizadas y conversión al viewport/iframe actual. Comprobación del control o del área visual antes del clic.
-- Una acción en curso por sesión, leases y diario durable antes del input. Un resultado incierto nunca se repite automáticamente.
-- Los timeouts de captura mantienen abierta la sesión: se reintenta la imagen con espera gradual y heartbeat activo. Mientras la pantalla siga sin clasificar, cargando o con ronda activa, se renueva automáticamente cada cinco segundos cuando no hay una revisión reservada ni un input pendiente. Un cambio de objetivo visual pide otra observación; no repite el clic. Los errores definitivos de documento, como 404/410/401/403, se registran y bloquean la sesión; un 404 de un recurso accesorio no la termina. También se respetan pausa, parada y el tiempo de ejecución configurado en GitHub.
-- Árbol/grafo BFS independiente por juego, frontera persistente, opciones de compra, tres tiradas normales por defecto y cobertura explícita. El modelo clasifica las pantallas y elige caminos; no se atribuye análisis visual a una heurística de texto.
-- Separación entre entrada emitida, pantalla observada y resultado verificado por el revisor.
-- Aceleración adaptativa 1×/2×/4× para animaciones Web Animations accesibles, tras rondas verificadas y fuera de ronda. No parchea todos los timers ni acelera red, respuestas del proveedor o análisis de ChatGPT. Motores canvas sin ese soporte siguen a 1×.
-- Exportación privada JSON/JSONL con acciones, estados, imágenes referenciadas y BFS. Replay con comprobación de estado/objetivo y revisión entre pasos.
-- Catálogo importado de **24 proveedores y 4.415 juegos**, fijado a la revisión `1014816f2952a9019369ddde5c0ad55c40e33d78` de Hybrid-actions. Las entradas requieren aprobación de uso demo; importarlas no prueba compatibilidad.
+Queremos hacerlo en paralelo, con pocas esperas, imágenes comprimidas y aceleración compatible. Cada juego debe conservar un grafo BFS de caminos y un registro de capturas, coordenadas, clicks y resultados para revisar y repetir el recorrido. Si un proveedor presenta errores reales, se omite y se continúa con otros.
 
-## Empezar en Windows
+**Ese es el objetivo. Todavía no hay un servicio autónomo que garantice terminar todos los juegos o todos los proveedores sin intervención del agente.**
 
-### Lanzador de links (navegadores en GitHub)
+## Cómo funciona
 
-Abrir **`Abrir-Lanzador.cmd`** con doble clic. Pegar un link HTTPS por línea, elegir la duración y pulsar **Enviar y ejecutar en GitHub**. Requiere Node y la sesión de GitHub CLI de esta PC; no requiere instalar Chromium localmente. El lanzador sólo muestra el formulario y publica la lista; los juegos se abren en GitHub.
+```mermaid
+flowchart LR
+    L[Lanzador: links] --> R[Lista privada en GitHub]
+    R --> W[Workers: navegadores en GitHub]
+    W --> C[Coordinador en Cloudflare]
+    C --> A[Agente navegador]
+    A --> V[Clasificadores: ven capturas]
+    V --> A
+    A -->|Una acción por juego| C
+    C --> W
+    C --> H[Historial y grafo por juego]
+```
 
-Cada envío guarda `queues/UUID.json` en el repositorio privado y dispara `browsers.yml`. El workflow carga la lista en Cloudflare y obtiene un run ID; cuatro workers toman hasta dos juegos cada uno. Hasta 64 links por tanda, sin duplicados. Las tandas de GitHub se ejecutan una por vez. Si una ya está activa, la siguiente espera.
+El **agente navegador** controla las compras y comprueba resultados. Los **clasificadores** reciben imágenes y devuelven estados y coordenadas; no compran por su cuenta. Los **workers** ejecutan el mouse, scroll, arrastre o teclas permitidas. Un worker de navegador no es una instancia de GPT.
 
-En ChatGPT: **«Usá list_runs y procesá mi nueva tanda por lotes»**. El MCP debe estar conectado; el lanzador no crea inferencia autónoma. Se puede cerrar el formulario o apagar la PC después del envío. El seguimiento está en Actions y `get_run_status`. Los links se conservan completos en el repositorio privado: los accesos temporales pueden vencer y las URLs con credenciales incrustadas se rechazan.
+## Cómo usarlo: lanzador local, juegos remotos
 
-Para salir por tu VPN, activar **Usar WireGuard para esta tanda** y seleccionar el archivo `.conf` desde el mismo formulario. El lanzador valida el perfil y lo envía mediante stdin a GitHub Actions Secrets; el repositorio guarda sólo su referencia. Cada perfil normalizado tiene un nombre independiente, reutilizable, para que otra subida no cambie tandas en espera. No se copia el archivo a la carpeta del proyecto ni se muestra su contenido. Si usás el mismo perfil al mismo tiempo en otro equipo, el servidor puede cambiar el destino del peer: usar un perfil dedicado a GitHub.
+Necesitás acceso al repositorio privado, Node.js **22.16 o superior**, GitHub CLI y una sesión con permiso para publicar listas y ejecutar Actions.
 
-Se admiten perfiles de cliente estándar con una interfaz, un peer, Address IPv4, DNS por IP y `AllowedIPs` que incluya `0.0.0.0/0`. Las rutas IPv6 pueden ir por el túnel si el perfil las incluye; la salida IPv6 directa queda bloqueada. No se aceptan scripts PreUp/PostUp/PreDown/PostDown, Table, SaveConfig ni extensiones de proveedores. Una configuración incompatible se rechaza antes de publicar la tanda. El workflow verifica ruta, handshake y salida HTTPS antes de abrir juegos, instala bloqueo de salida directa IPv4/IPv6 y limpia el perfil temporal al terminar. Todo el tráfico del job, incluido el MCP, pasa por la VPN; el servidor debe permitir acceso a GitHub, Cloudflare y los juegos.
+```powershell
+gh repo clone Shisetsu-Code/game-pilot-mcp
+cd game-pilot-mcp
+npm ci
+gh auth status
+```
 
-Los perfiles se conservan como secretos `WG_CONFIG_<huella>` hasta que el propietario los elimine desde Settings → Secrets and variables → Actions. No eliminarlos mientras haya tandas que los usen. No hay borrado automático ni renovación de credenciales. La conexión con tu servidor sólo puede comprobarse al enviar tu configuración real.
+Si ya tenés una copia, usá esa carpeta. Si falta la sesión, ejecutá `gh auth login`.
 
-Si se guardó la lista pero falló el inicio de Actions, el lanzador lo indica: iniciar manualmente el workflow con el `queue_path` mostrado, sin volver a crear una tanda. La carga de una misma lista es idempotente; un error intermedio al crear la tanda se bloquea para revisión y no repite compras.
+1. Abrí **Abrir-Lanzador.cmd**. Alternativa: `node scripts/launcher.mjs` y **http://127.0.0.1:4188**.
+2. Pegá **un link HTTPS de demo por línea**, hasta 64 por tanda, y confirmá el uso de saldo ficticio.
+3. Elegí entre 1 y 300 minutos de ejecución. Dejá WireGuard desactivado para trabajar sin VPN.
+4. Pulsá **Enviar y ejecutar en GitHub**. El formulario guarda `queues/UUID.json` y devuelve un enlace a Actions.
+5. Conectá el agente al MCP de **Game Pilot**, autorizá esa conexión y pedile que procese la tanda mediante `list_runs`.
 
-### Alternativa: todo local
+El formulario arranca navegadores; **no inicia por sí mismo la inferencia de un modelo**. Después del envío, podés cerrar el lanzador o apagar la PC: los juegos siguen en GitHub durante la ejecución. El agente que analiza capturas debe seguir activo para generar decisiones.
 
-Requiere Node.js 22.16+ y acceso a los paquetes oficiales.
+Si la lista se guardó pero Actions no arrancó, usá la ruta `queues/UUID.json` indicada para iniciar el workflow manualmente, sin duplicar el envío.
+
+### Instrucción de ejemplo para el agente
+
+> Usá exclusivamente Game Pilot MCP. Localizá mi tanda con list_runs. Navegá los juegos en paralelo y pasá sus capturas a los clasificadores. Hacé las compras visibles con saldo ficticio, completá cada bonus y tres tiradas normales. Entre rondas esperá inicialmente diez segundos y pedí una captura nueva. Usá Turbo nativo o aceleración efectiva comprobada cuando sea compatible. Guardá acciones y resultados. Si un proveedor da un error real, omitilo y seguí con otros. No repitas una compra de resultado incierto.
+
+Ver [el ciclo de navegación y clasificación](docs/vision-loop.md) y [los contratos MCP](docs/client.md).
+
+## Capacidad actual
+
+| Modalidad | Navegadores | Capacidad |
+| --- | --- | --- |
+| Lanzador sin VPN | `distributed-browsers.yml`: cuatro máquinas de GitHub | Hasta 8 por worker: **32 juegos simultáneos** |
+| Con WireGuard | `browsers.yml`: un job con cuatro procesos | 2 por worker por defecto: **8 juegos** |
+| Supervisor local opcional | Cuatro procesos en la PC | 2 por worker por defecto; configuración de 1 a 8 |
+
+La cola admite 64 links; no se abren todos a la vez. La admisión puede esperar si falta memoria. Distintas tandas pueden tener ejecuciones distintas: revisar Actions para conocer el consumo total.
+
+**20 workers / 160 juegos no está implementado.** El límite de jobs de la cuenta de GitHub no aumenta automáticamente los cuatro workers de este proyecto. Las [mediciones de capacidad](docs/capacity-idle-evidence.json) y [saturación](docs/capacity-saturation-evidence.json) son sintéticas, no garantías para proveedores reales.
+
+## Estado real
+
+| Función | Estado |
+| --- | --- |
+| Lanzador, listas privadas y navegadores en GitHub | Implementado |
+| MCP con OAuth, coordinación en Cloudflare y credenciales separadas | Implementado; cada cliente debe conectarse y autorizarse |
+| Capturas JPEG por lotes, hasta 8 por llamada | Implementado; perfil habitual de calidad 45 y ancho máximo 960 |
+| Mouse, scroll, arrastre y teclas permitidas | Implementado, con comprobaciones de geometría y objetivo |
+| BFS por juego, cobertura y exportaciones | Implementado; depende de lo que el agente realmente recorra y verifique |
+| Compras y bonus de cualquier proveedor | **Parcial**; todavía hay bloqueos, adaptaciones pendientes y resultados inciertos |
+| Agente navega y chats clasifican | Flujo operativo. El clasificador interno pudo ver archivos; el envío probado a chats normales por URL y texto base64 falló |
+| Aceleración universal x4 | **No implementada**; hay aceleración limitada y Turbo nativo según el juego |
+| WireGuard desde el formulario | Implementado para perfiles compatibles; requiere servidor y perfil real. No hay servidor del usuario configurado |
+| Inferencia autónoma permanente por API | Pendiente; este repositorio no la inicia ni la financia |
+
+Una compra pulsada no equivale a un bonus terminado. `complete_game` comprueba las opciones registradas y tres tiradas verificadas; no descubre compras que el agente nunca vio. Las pruebas de infraestructura no certifican todo el catálogo.
+
+## Esperas, velocidad y errores
+
+Los **diez segundos son una espera inicial**. Después hay que pedir `request_observation`: la foto inmediata de un input puede seguir mostrando su animación inicial. Si la ronda continúa, se espera y se captura otra vez.
+
+`set_game_speed` solicita 1x, 2x o 4x; sólo aplica a animaciones Web Animations compatibles y necesita rondas verificadas. No acelera necesariamente canvas, red ni análisis del modelo. Turbo Spin nativo es otra opción, pero no equivale automáticamente a x4.
+
+Un error real del documento del juego, como 404/403, se registra y puede justificar omitir su proveedor. Una carga lenta, un timeout de captura o el 404 de un recurso accesorio no prueban que el juego sea inválido. Si una compra pudo haberse ejecutado, se conserva su evidencia y se reconcilia antes de repetir inputs financieros.
+
+## WireGuard opcional
+
+Hace falta un servidor/proveedor WireGuard y un perfil de cliente `.conf`. Subir el archivo en el formulario **no crea un servidor VPN**. Para operar sin VPN, dejar la opción desactivada.
+
+El perfil se guarda como secreto de GitHub; la lista contiene sólo su referencia. El workflow valida el túnel antes de abrir juegos. La conexión real del perfil del usuario todavía debe probarse. Ver [Operación](docs/operations.md#wireguard-desde-el-lanzador).
+
+## Historial y reproducción
+
+`get_game_graph` muestra los caminos por juego. `export_replay` guarda manifiesto JSON y eventos JSONL con estados, inputs, resultados e imágenes referenciadas. D1 y el bucket privado R2 conservan los datos remotos.
+
+`start_replay` y `advance_replay` repiten pasos verificados comprobando pantallas y objetivos. Se registra el recorrido; **los premios aleatorios no son reproducibles**. Un cambio de pantalla puede exigir una decisión nueva.
+
+## Guías y desarrollo
+
+- [Operación y despliegue](docs/operations.md): Cloudflare, secretos, workflows, parada y recuperación.
+- [Cliente MCP](docs/client.md): observaciones, coordenadas, herramientas y compras pendientes.
+- [Navegación y clasificación](docs/vision-loop.md): reparto de funciones, esperas y entrega de capturas.
+- [Diseño](docs/design.md) y [plan inicial](docs/implementation-plan.md): contexto del desarrollo; no sustituyen el estado actual de este README.
+
+Para ejecutar también los navegadores en la PC, de forma opcional:
 
 ```powershell
 npm ci
@@ -50,51 +125,12 @@ node scripts/init-local.mjs
 .\Start-Game-Pilot.ps1
 ```
 
-El iniciador abre el coordinador local y cuatro ejecutores ocultos. Mantener su terminal activa; Ctrl+C detiene esta ejecución. La configuración privada del cliente MCP se genera en `data/mcp-config.json`. No compartir ese archivo ni `.env`: contienen credenciales locales. El repositorio los excluye.
-
-El coordinador local escucha sólo en `127.0.0.1:4176`. Para ChatGPT web se necesita el despliegue HTTPS y OAuth descrito en [operación](docs/operations.md); una URL localhost o un archivo stdio no constituye una conexión remota de ChatGPT.
-
-## Uso por lotes
-
-1. `list_providers` y `list_games` permiten seleccionar juegos. `approve_demo` guarda la evidencia de que la entrada elegida corresponde a una demo ficticia autorizada.
-2. `start_run` crea hasta 64 juegos en cola; los ejecutores mantienen hasta ocho abiertos a la vez. Los ejecutores arrancados sin `PILOT_RUN_ID` descubren tandas nuevas automáticamente.
-3. `get_observations` devuelve hasta ocho imágenes con identificadores. Clasificar cada pantalla mediante `annotate_observations`, incluyendo `roundPhase: idle|active|unknown`.
-4. `submit_decisions` envía un input por sesión en un lote. Después del clic, otra observación permite `review_results` por lote. Una imagen por sí sola no confirma que una compra o bonus haya terminado.
-5. Si hay animación o bonus activo, pedir nuevas observaciones. Marcar resultados sólo cuando la evidencia permita comprobarlos. Los demás juegos continúan.
-6. `update_coverage` registra opciones, páginas agotadas y nodos expandidos. `complete_game` comprueba compras registradas y tres tiradas; libera el puesto para otro juego.
-7. `export_replay` guarda manifiesto y eventos privados. `start_replay`, seguido de observación/clasificación y `advance_replay`, ejecuta pasos comprobados; los controles visuales sin objetivo estructurado único requieren revisión y decisión nuevas.
-
-Ver [guía del cliente](docs/client.md) para contratos y criterios de revisión.
-
-## Verificación
+Para comprobar el código:
 
 ```powershell
 npm run check
 npm test
 npm run test:browser
-npx wrangler deploy --dry-run --outdir artifacts/worker
 ```
 
-Las pruebas de navegador incluyen un sistema completo con cuatro procesos, ocho demos deterministas, dos compras y tres tiradas por juego, imágenes reales y herramientas MCP reales. [Evidencia del piloto sintético](docs/pilot-evidence.json). Es una validación de infraestructura; no es un benchmark de inferencia visual ni una certificación de los 24 proveedores.
-
-## Límites actuales
-
-- Los resultados aleatorios del proveedor no son reproducibles; sí se registra la secuencia de entradas y sus condiciones.
-- El BFS guía al revisor; no restaura automáticamente estados que requieren repetir compras. Un camino que no se puede reconstruir se informa bloqueado.
-- La persistencia usa un documento CAS por sesión, con límite explícito de 850 KB. Al alcanzar capacidad se detiene esa sesión; exportar y dividir el trabajo. No hay purga silenciosa del historial.
-- Los adaptadores de lanzamiento no equivalen a soporte universal. Pragmatic tiene manejo inicial del botón Play Demo; los demás pueden necesitar navegación revisada o un adaptador específico. Nunca afirmar cobertura completa de un menú no recorrido.
-- Acelerar animaciones accesibles no acelera necesariamente un motor canvas. Cambiar a 1× no garantiza recuperar un motor que ya falló; conservar evidencia y bloquearlo si no se recupera.
-- Un chat MCP analiza lotes durante sus turnos. No crea ocho inferencias autónomas permanentes ni continúa después de terminar el turno. Eso requeriría un servicio por API con presupuesto aparte.
-- GitHub y Cloudflare requieren acceso autenticado. El código y el empaquetado local no prueban que exista un repositorio remoto o un despliegue activo.
-
-## Procedencia
-
-Proyecto independiente. Catálogos de [Hybrid-actions](https://github.com/Shisetsu-Code/Hybrid-actions) y referencia de diseño de [hybrid-cloud-fuzzer](https://github.com/Shisetsu-Code/hybrid-cloud-fuzzer). No se modifica su despliegue ni se comparten sus secretos o colas.
-
-## Capacidad ampliada sin VPN
-
-El lanzador sin VPN usa `distributed-browsers.yml`: cuatro máquinas de GitHub, hasta ocho navegadores independientes por máquina (32 juegos abiertos). El coordinador conserva el límite por owner con CAS; `set_worker_capacity` admite 1–8 y no reinicia sesiones. Los cupos sin trabajo no abren Chromium. Con menos de 1 GiB libre se demora la admisión de nuevos juegos, conservando los abiertos. Estado y comando llegan en una consulta `/runner/poll`. Las tandas con WireGuard mantienen el flujo protegido anterior.
-
-Medición GitHub (2 CPU, 7,75 GiB), con canvas animados y pausas de 2 segundos: 2/4/6/8 juegos produjeron 0,93/1,73/2,33/2,60 operaciones por segundo. Son pruebas sintéticas; la capacidad con proveedores reales depende de cada juego y de la red. Ver `docs/capacity-idle-evidence.json`.
-
-La prueba de saturación con 12 y 16 navegadores logró abrirlos sin errores, pero rindió menos: 1,99 y 1,91 operaciones/s, con p95 de 4,945 y 7,358 s. Ocho mantuvo 2,60 operaciones/s y p95 de 1,548 s. Se conserva el límite operativo de ocho; ver `docs/capacity-saturation-evidence.json`. La marca `acceptable:false` indica superar el umbral de latencia de 3 s del ensayo, no un fallo al abrir los navegadores.
+GitHub Actions consume minutos y Cloudflare consume sus recursos según el uso. El código actual no incorpora inferencia autónoma por API de OpenAI; una futura integración necesitaría su propia configuración y presupuesto. No subir `.env`, `data`, perfiles VPN ni claves al repositorio.

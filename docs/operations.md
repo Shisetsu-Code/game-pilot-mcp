@@ -4,7 +4,7 @@
 
 El repositorio privado está publicado y el MCP está desplegado en https://game-pilot-mcp.braian-n-l.workers.dev/mcp. Se reutilizó la sesión existente de Wrangler al actualizar la dependencia del proyecto a 4.152.0, compatible con su configuración cifrada. No fue necesario iniciar otra sesión ni copiar credenciales del fuzzer. Recursos nuevos: D1 `game-pilot`, R2 privado `game-pilot-private` y KV `game-pilot-mcp-oauth`.
 
-Versión desplegada: `75bbd34d-d509-4a8d-a0e5-6bdaad553429`. Evidencia funcional remota en `deployment-evidence.json`. La autorización desde la cuenta real de ChatGPT y las compras en proveedores reales siguen pendientes de esa conexión.
+La evidencia de `deployment-evidence.json` corresponde a una comprobación histórica, no necesariamente al último despliegue. Consultar Cloudflare y el historial de publicación para identificar la versión activa. Ya se realizaron compras demo y verificaciones visuales parciales; eso no prueba compatibilidad universal ni una conexión funcional desde cualquier chat. Ver el [README](../README.md) y [Navegación y clasificación](vision-loop.md) para el estado y flujo actuales.
 
 ## GitHub
 
@@ -45,7 +45,12 @@ El bucket R2 permanece privado. OAuth guarda clientes/grants en el KV nuevo. `gl
 
 Configurar en el entorno local de ejecutores `PILOT_URL` al origen HTTPS y `PILOT_RUNNER_TOKEN` al secreto remoto correspondiente; ejecutar `npm run runner`. No poner el secreto OAuth ni el MCP en los ejecutores remotos si no los necesitan. Los cuatro procesos pueden descubrir tandas sin un run ID fijo.
 
-La opción preferida es el workflow manual `browsers.yml` de GitHub Actions: cuatro procesos de navegador y dos sesiones por proceso, sin depender de la PC. `PILOT_RUNNER_TOKEN` está configurado en secretos de Actions; sólo el workflow de navegadores lo recibe. No recibe el secreto MCP ni la clave de consentimiento. Duración predeterminada 30 minutos, máximo 300, sin programación ni reactivación automática. Sólo se permite una ejecución de este workflow a la vez. Para detenerla usar Cancel workflow; revisar en MCP cualquier acción que quede incierta al finalizar. Los datos durables permanecen en Cloudflare.
+El lanzador selecciona el workflow según la tanda:
+
+- **Sin VPN:** `distributed-browsers.yml`, con cuatro máquinas y entre uno y ocho navegadores por worker. El lanzador solicita ocho: hasta 32 juegos simultáneos. Admite `queue_path` para una lista nueva o `existing_run_id` para admitir pendientes de una tanda existente; no recupera un navegador cerrado ni repite una acción incierta. Duración predeterminada del workflow: 300 minutos.
+- **Con WireGuard:** `browsers.yml`, con un job y cuatro procesos, dos juegos por proceso por defecto. Recibe `queue_path` y la referencia `wireguard_secret`. Duración predeterminada: 30 minutos.
+
+Ambos aceptan entre 1 y 300 minutos. Sus grupos de concurrencia están asociados a la tanda; ejecuciones de distintas tandas pueden coexistir y consumir recursos adicionales. No hay programación ni reactivación automática. Los jobs de preparación/carga usan `PILOT_MCP_TOKEN`; los navegadores usan `PILOT_RUNNER_TOKEN`. No necesitan la clave de consentimiento OAuth. Para detenerlos usar Cancel workflow y revisar cualquier acción incierta; los datos durables permanecen en Cloudflare.
 
 La alternativa local `.\Start-Remote-Game-Pilot.ps1` usa `data/remote.env`. La clave para aprobar el consentimiento OAuth está en `data/connection-key.txt`; sólo introducirla en la página HTTPS del nuevo MCP. Estos archivos están excluidos de Git.
 
